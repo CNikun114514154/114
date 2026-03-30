@@ -1,0 +1,1976 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>📚 校园图书馆智能推荐机器人</title>
+  <style>
+    /* ====== 全局变量 ====== */
+    :root {
+      --primary: #4f46e5;
+      --primary-light: #818cf8;
+      --primary-dark: #3730a3;
+      --secondary: #f59e0b;
+      --bg: #f0f4ff;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --bot-bubble: #eef2ff;
+      --user-bubble: #4f46e5;
+      --shadow: 0 4px 20px rgba(79,70,229,0.12);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'PingFang SC', 'Microsoft YaHei', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ====== 侧边栏 ====== */
+    .sidebar {
+      width: 280px;
+      background: var(--card-bg);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      box-shadow: 2px 0 12px rgba(0,0,0,0.05);
+    }
+
+    .sidebar-header {
+      padding: 24px 20px 16px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+    }
+
+    .sidebar-header .logo {
+      font-size: 28px;
+      margin-bottom: 6px;
+    }
+
+    .sidebar-header h2 {
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .sidebar-header p {
+      font-size: 12px;
+      opacity: 0.8;
+      margin-top: 4px;
+    }
+
+    .sidebar-section {
+      padding: 16px 12px 8px;
+    }
+
+    .sidebar-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0 8px;
+      margin-bottom: 8px;
+    }
+
+    .quick-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 10px 12px;
+      border: none;
+      background: transparent;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text);
+      text-align: left;
+      transition: all 0.2s;
+    }
+
+    .quick-btn:hover {
+      background: var(--bg);
+      color: var(--primary);
+    }
+
+    .quick-btn .icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .quick-btn.science .icon { background: #dbeafe; }
+    .quick-btn.literature .icon { background: #fef3c7; }
+    .quick-btn.history .icon { background: #d1fae5; }
+    .quick-btn.tech .icon { background: #ede9fe; }
+    .quick-btn.self-help .icon { background: #fee2e2; }
+    .quick-btn.art .icon { background: #fce7f3; }
+
+    .sidebar-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 8px 16px;
+    }
+
+    .stats-card {
+      margin: 8px 12px;
+      padding: 14px;
+      background: linear-gradient(135deg, #f0f4ff, #e8eeff);
+      border-radius: 12px;
+      border: 1px solid #c7d2fe;
+    }
+
+    .stats-card .stats-title {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-num {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 16px;
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ====== 主区域 ====== */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    /* 顶部栏 */
+    .topbar {
+      padding: 14px 24px;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-shrink: 0;
+    }
+
+    .bot-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .bot-avatar::after {
+      content: '';
+      position: absolute;
+      bottom: 1px;
+      right: 1px;
+      width: 10px;
+      height: 10px;
+      background: #10b981;
+      border-radius: 50%;
+      border: 2px solid white;
+    }
+
+    .bot-info h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .bot-info p {
+      font-size: 12px;
+      color: #10b981;
+    }
+
+    .topbar-actions {
+      margin-left: auto;
+      display: flex;
+      gap: 8px;
+    }
+
+    .topbar-btn {
+      padding: 7px 14px;
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .topbar-btn:hover {
+      border-color: var(--primary-light);
+      color: var(--primary);
+      background: var(--bg);
+    }
+
+    /* 聊天区域 */
+    .chat-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .chat-area::-webkit-scrollbar { width: 6px; }
+    .chat-area::-webkit-scrollbar-track { background: transparent; }
+    .chat-area::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+    /* 消息气泡 */
+    .message {
+      display: flex;
+      gap: 12px;
+      max-width: 85%;
+      animation: fadeSlideIn 0.3s ease;
+    }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.bot { align-self: flex-start; }
+    .message.user { align-self: flex-end; flex-direction: row-reverse; }
+
+    .msg-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    }
+
+    .message.user .msg-avatar {
+      background: linear-gradient(135deg, #10b981, #059669);
+    }
+
+    .msg-content {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .msg-sender {
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 0 4px;
+    }
+
+    .message.user .msg-sender { text-align: right; }
+
+    .msg-bubble {
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.6;
+      word-break: break-word;
+    }
+
+    .message.bot .msg-bubble {
+      background: var(--bot-bubble);
+      border-top-left-radius: 4px;
+      color: var(--text);
+      border: 1px solid #e0e7ff;
+    }
+
+    .message.user .msg-bubble {
+      background: var(--user-bubble);
+      border-top-right-radius: 4px;
+      color: white;
+    }
+
+    /* 书籍推荐卡片 */
+    .book-cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .book-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      width: 200px;
+      cursor: pointer;
+      transition: all 0.25s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .book-card:hover {
+      border-color: var(--primary-light);
+      box-shadow: 0 6px 20px rgba(79,70,229,0.15);
+      transform: translateY(-2px);
+    }
+
+    .book-cover {
+      width: 100%;
+      height: 110px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      margin-bottom: 10px;
+    }
+
+    .book-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+
+    .book-author {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .book-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .book-tag {
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .book-rating {
+      font-size: 12px;
+      color: #f59e0b;
+      margin-top: 6px;
+    }
+
+    /* 快捷提示按钮 */
+    .suggestion-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .chip {
+      padding: 7px 14px;
+      border: 1.5px solid var(--primary-light);
+      border-radius: 20px;
+      font-size: 13px;
+      color: var(--primary);
+      background: white;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .chip:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    /* 输入区域 */
+    .input-area {
+      padding: 16px 24px 20px;
+      background: var(--card-bg);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .input-box {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      background: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 10px 10px 10px 16px;
+      transition: border-color 0.2s;
+    }
+
+    .input-box:focus-within {
+      border-color: var(--primary-light);
+      background: white;
+      box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+    }
+
+    .input-box textarea {
+      flex: 1;
+      border: none;
+      background: transparent;
+      resize: none;
+      outline: none;
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--text);
+      line-height: 1.5;
+      max-height: 120px;
+      min-height: 20px;
+    }
+
+    .input-box textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    .send-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      border: none;
+      background: var(--primary);
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .send-btn:hover { background: var(--primary-dark); transform: scale(1.05); }
+    .send-btn:active { transform: scale(0.95); }
+    .send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .input-hints {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .hint-chip {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      background: white;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .hint-chip:hover {
+      border-color: var(--primary-light);
+      color: var(--primary);
+      background: #eef2ff;
+    }
+
+    /* 打字动画 */
+    .typing-indicator {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 12px 16px;
+      background: var(--bot-bubble);
+      border-radius: 16px;
+      border-top-left-radius: 4px;
+      border: 1px solid #e0e7ff;
+      width: fit-content;
+    }
+
+    .typing-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--primary-light);
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-6px); }
+    }
+
+    /* 欢迎卡片 */
+    .welcome-card {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 8px;
+    }
+
+    .welcome-card h2 {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .welcome-card p {
+      font-size: 14px;
+      opacity: 0.85;
+      line-height: 1.6;
+    }
+
+    .welcome-features {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .feature-item {
+      background: rgba(255,255,255,0.15);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* 书籍详情弹窗 */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      animation: fadeIn 0.2s ease;
+      backdrop-filter: blur(2px);
+    }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .modal {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 460px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      animation: slideUp 0.25s ease;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .modal-close {
+      float: right;
+      background: #f1f5f9;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .modal-close:hover { background: #e2e8f0; }
+
+    .modal-cover {
+      width: 100%;
+      height: 140px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 60px;
+      margin: 16px 0;
+    }
+
+    .modal-title {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .modal-author {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .modal-desc {
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+
+    .modal-meta {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .modal-meta-item {
+      text-align: center;
+      padding: 10px;
+      background: var(--bg);
+      border-radius: 10px;
+    }
+
+    .modal-meta-item .val {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .modal-meta-item .lbl {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .modal-btn {
+      width: 100%;
+      padding: 13px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .modal-btn:hover { background: var(--primary-dark); }
+
+    /* DeepSeek 设置弹窗 */
+    .settings-modal {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 480px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      animation: slideUp 0.25s ease;
+    }
+
+    .settings-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .settings-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+
+    .settings-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .settings-input {
+      width: 100%;
+      padding: 11px 14px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: monospace;
+      outline: none;
+      transition: border-color 0.2s;
+      box-sizing: border-box;
+      color: var(--text);
+    }
+
+    .settings-input:focus {
+      border-color: var(--primary-light);
+      box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+    }
+
+    .settings-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 6px;
+      margin-bottom: 20px;
+    }
+
+    .settings-hint a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    .settings-hint a:hover { text-decoration: underline; }
+
+    .settings-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .settings-save-btn {
+      flex: 1;
+      padding: 11px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .settings-save-btn:hover { background: var(--primary-dark); }
+
+    .settings-cancel-btn {
+      padding: 11px 20px;
+      background: #f1f5f9;
+      color: var(--text-muted);
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .settings-cancel-btn:hover { background: #e2e8f0; }
+
+    .api-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      margin-left: 8px;
+    }
+
+    .api-status.connected {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .api-status.disconnected {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .api-status.loading {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    /* AI 标识徽章 */
+    .ai-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    /* 流式输出光标 */
+    .stream-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1em;
+      background: var(--primary);
+      margin-left: 2px;
+      vertical-align: middle;
+      animation: blink 0.8s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* 响应式 */
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .chat-area { padding: 16px; }
+      .book-card { width: calc(50% - 5px); }
+      .welcome-features { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ======== 侧边栏 ======== -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">📚</div>
+    <h2>图书馆智能助手</h2>
+    <p>BookBot · 都昌一中图书馆</p>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">📂 按分类浏览</div>
+    <button class="quick-btn science" onclick="sendMsg('推荐自然科学类书籍')">
+      <div class="icon">🔬</div>
+      <span>自然科学 (14本)</span>
+    </button>
+    <button class="quick-btn literature" onclick="sendMsg('推荐文学小说类书籍')">
+      <div class="icon">📖</div>
+      <span>文学小说 (20本)</span>
+    </button>
+    <button class="quick-btn history" onclick="sendMsg('推荐历史人文类书籍')">
+      <div class="icon">🏛️</div>
+      <span>历史人文 (12本)</span>
+    </button>
+    <button class="quick-btn tech" onclick="sendMsg('推荐科技编程类书籍')">
+      <div class="icon">💻</div>
+      <span>科技编程 (14本)</span>
+    </button>
+    <button class="quick-btn self-help" onclick="sendMsg('推荐励志成长类书籍')">
+      <div class="icon">💡</div>
+      <span>励志成长 (14本)</span>
+    </button>
+    <button class="quick-btn art" onclick="sendMsg('推荐艺术设计类书籍')">
+      <div class="icon">🎨</div>
+      <span>艺术设计 (10本)</span>
+    </button>
+    <button class="quick-btn" onclick="sendMsg('推荐国学经典书籍')" style="background:#fef9c3">
+      <div class="icon" style="background:#fef3c7">☯️</div>
+      <span>国学经典 (12本)</span>
+    </button>
+    <button class="quick-btn" onclick="sendMsg('推荐哲学思想类书籍')" style="background:#ede9fe">
+      <div class="icon" style="background:#e0e7ff">🤔</div>
+      <span>哲学思想 (10本)</span>
+    </button>
+    <button class="quick-btn" onclick="sendMsg('推荐经济管理类书籍')" style="background:#d1fae5">
+      <div class="icon" style="background:#dcfce7">💰</div>
+      <span>经济管理 (8本)</span>
+    </button>
+    <button class="quick-btn" onclick="sendMsg('推荐人物传记类书籍')" style="background:#fce7f3">
+      <div class="icon" style="background:#fbcfe8">👤</div>
+      <span>人物传记 (8本)</span>
+    </button>
+  </div>
+
+  <div class="sidebar-divider"></div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">⚡ 快捷问题</div>
+    <button class="quick-btn" onclick="sendMsg('有哪些适合高中生的课外书？')">
+      <div class="icon" style="background:#e0f2fe">📝</div>
+      <span>高中课外推荐</span>
+    </button>
+    <button class="quick-btn" onclick="sendMsg('最近新到了什么好书？')">
+      <div class="icon" style="background:#fef9c3">✨</div>
+      <span>最新上架</span>
+    </button>
+    <button class="quick-btn" onclick="sendMsg('给我推荐一本经典名著')">
+      <div class="icon" style="background:#f0fdf4">🏆</div>
+      <span>经典名著推荐</span>
+    </button>
+    <button class="quick-btn" onclick="sendMsg('推荐东野圭吾的书')">
+      <div class="icon" style="background:#1e293b;color:white">🔍</div>
+      <span>东野圭吾推理</span>
+    </button>
+    <button class="quick-btn" onclick="sendMsg('我想学编程，推荐入门书')">
+      <div class="icon" style="background:#d1fae5">💻</div>
+      <span>编程入门推荐</span>
+    </button>
+    <button class="quick-btn" onclick="sendMsg('推荐投资理财的书')">
+      <div class="icon" style="background:#fef3c7">💵</div>
+      <span>投资理财</span>
+    </button>
+  </div>
+
+  <div class="stats-card">
+    <div class="stats-title">📊 图书馆数据</div>
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-num">12,680</div>
+        <div class="stat-label">馆藏图书</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">328</div>
+        <div class="stat-label">本月新书</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">2,140</div>
+        <div class="stat-label">在借书目</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">4.8⭐</div>
+        <div class="stat-label">用户评分</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    都昌一中图书馆 · 智能推荐系统<br>
+    开馆时间：8:00 - 21:00
+  </div>
+</aside>
+
+<!-- ======== 主区域 ======== -->
+<main class="main">
+  <!-- 顶部栏 -->
+  <header class="topbar">
+    <div class="bot-avatar">📚</div>
+    <div class="bot-info">
+      <h3>BookBot · 图书馆智能推荐助手</h3>
+      <p>● 在线服务中</p>
+    </div>
+    <div class="topbar-actions">
+      <button class="topbar-btn" onclick="openSettings()">⚙️ DeepSeek设置</button>
+      <span id="apiStatusBadge" class="api-status disconnected">● 本地模式</span>
+      <button class="topbar-btn" onclick="clearChat()">🗑️ 清空对话</button>
+      <button class="topbar-btn" onclick="sendMsg('帮我随机推荐一本书')">🎲 随机推荐</button>
+    </div>
+  </header>
+
+  <!-- 聊天区域 -->
+  <div class="chat-area" id="chatArea">
+    <!-- 欢迎消息 -->
+    <div class="message bot">
+      <div class="msg-avatar">📚</div>
+      <div class="msg-content">
+        <div class="msg-sender">BookBot · 刚刚</div>
+        <div class="msg-bubble">
+          <div class="welcome-card">
+            <h2>👋 你好！我是 BookBot</h2>
+            <p>你的专属校园图书馆智能推荐助手！无论你在找什么类型的书，或者有什么阅读困惑，尽管问我～</p>
+            <div class="welcome-features">
+              <div class="feature-item">📖 个性化推荐</div>
+              <div class="feature-item">🔍 书籍搜索</div>
+              <div class="feature-item">💬 阅读建议</div>
+              <div class="feature-item">📊 馆藏查询</div>
+            </div>
+          </div>
+          <div>你想找什么类型的书？或者告诉我你的兴趣爱好，我来为你量身推荐！</div>
+          <div class="suggestion-chips">
+            <div class="chip" onclick="sendMsg('我喜欢科幻小说')">🚀 科幻小说</div>
+            <div class="chip" onclick="sendMsg('推荐高考必读书目')">📝 高考必读</div>
+            <div class="chip" onclick="sendMsg('我想了解编程')">💻 编程入门</div>
+            <div class="chip" onclick="sendMsg('有什么励志的书吗')">💪 励志成长</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 输入区域 -->
+  <div class="input-area">
+    <div class="input-box">
+      <textarea
+        id="inputField"
+        placeholder="告诉我你想找什么书，或者你的阅读偏好..."
+        rows="1"
+        onkeydown="handleKeyDown(event)"
+        oninput="autoResize(this)"
+      ></textarea>
+      <button class="send-btn" id="sendBtn" onclick="handleSend()">➤</button>
+    </div>
+    <div class="input-hints">
+      <span class="hint-chip" onclick="fillInput('推荐一本适合高中生的励志书')">高中励志书</span>
+      <span class="hint-chip" onclick="fillInput('有没有关于人工智能的书')">人工智能</span>
+      <span class="hint-chip" onclick="fillInput('推荐中国古典名著')">古典名著</span>
+      <span class="hint-chip" onclick="fillInput('有什么好看的悬疑推理小说')">悬疑推理</span>
+      <span class="hint-chip" onclick="fillInput('我想提升写作能力，推荐什么书')">写作提升</span>
+      <span class="hint-chip" onclick="fillInput('推荐经济学入门书')">经济学</span>
+      <span class="hint-chip" onclick="fillInput('推荐人物传记')">人物传记</span>
+      <span class="hint-chip" onclick="fillInput('我想了解哲学')">哲学入门</span>
+    </div>
+  </div>
+</main>
+
+<!-- 书籍详情弹窗 -->
+<div class="modal-overlay" id="modalOverlay" style="display:none" onclick="closeModal(event)">
+  <div class="modal" id="bookModal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<!-- DeepSeek 设置弹窗 -->
+<div class="modal-overlay" id="settingsOverlay" style="display:none" onclick="closeSettings(event)">
+  <div class="settings-modal" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeSettings()" style="float:right">✕</button>
+    <div class="settings-title">⚙️ DeepSeek AI 设置</div>
+    <p class="settings-desc">
+      接入 DeepSeek 大模型后，BookBot 将拥有真正的智能对话能力，能理解复杂问题并给出个性化推荐和书评。
+    </p>
+    <label class="settings-label">🔑 DeepSeek API Key</label>
+    <input
+      class="settings-input"
+      id="apiKeyInput"
+      type="password"
+      placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    />
+    <div class="settings-hint">
+      前往 <a href="https://platform.deepseek.com/api_keys" target="_blank">platform.deepseek.com</a> 获取免费 API Key（新用户赠送额度）
+    </div>
+    <label class="settings-label">🌐 API 地址（可选，默认官方）</label>
+    <input
+      class="settings-input"
+      id="apiBaseInput"
+      type="text"
+      placeholder="https://api.deepseek.com"
+      style="margin-bottom:6px"
+    />
+    <div class="settings-hint" style="margin-bottom:16px">如使用中转服务可修改此地址，留空则使用官方接口</div>
+    <div id="settingsTestResult" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px"></div>
+    <div class="settings-row">
+      <button class="settings-save-btn" onclick="saveSettings()">✅ 保存并连接</button>
+      <button class="settings-cancel-btn" onclick="testConnection()">🔌 测试连接</button>
+      <button class="settings-cancel-btn" onclick="clearApiKey()">🗑️ 清除</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// 图书数据库 - 100本精选图书
+// ============================================================
+const BOOKS_DB = {
+  science: [
+    { id: 1, title: "时间简史", author: "史蒂芬·霍金", emoji: "🌌", color: "#dbeafe", tags: ["宇宙", "物理"], rating: 4.8, pages: 212, year: 1988, desc: "霍金用通俗易懂的语言讲述了宇宙的起源与命运，从大爆炸到黑洞，将深奥的物理学展现给大众。", category: "自然科学" },
+    { id: 2, title: "自私的基因", author: "理查德·道金斯", emoji: "🧬", color: "#d1fae5", tags: ["生物", "进化"], rating: 4.7, pages: 368, year: 1976, desc: "道金斯提出了革命性的基因视角，解释了为什么生命体的行为都服务于基因的自我复制。", category: "自然科学" },
+    { id: 3, title: "数学之美", author: "吴军", emoji: "📐", color: "#fef3c7", tags: ["数学", "科普"], rating: 4.6, pages: 296, year: 2012, desc: "用通俗的语言讲述数学在自然语言处理、搜索引擎中的应用，展现数学之美。", category: "自然科学" },
+    { id: 4, title: "物种起源", author: "达尔文", emoji: "🦋", color: "#ede9fe", tags: ["进化", "生物"], rating: 4.9, pages: 480, year: 1859, desc: "改变人类世界观的伟大著作，提出自然选择学说，奠定了现代生物学基础。", category: "自然科学" },
+    { id: 101, title: "从一到无穷大", author: "乔治·伽莫夫", emoji: "🔢", color: "#fef3c7", tags: ["数学", "科普"], rating: 4.8, pages: 340, year: 1947, desc: "从数学到物理、从微观到宏观，以生动有趣的方式介绍现代科学知识。", category: "自然科学" },
+    { id: 102, title: "宇宙的琴弦", author: "布莱恩·格林", emoji: "🎻", color: "#ede9fe", tags: ["物理", "弦理论"], rating: 4.7, pages: 480, year: 1999, desc: "深入浅出地介绍弦理论，解释宇宙最基本的构成和运作方式。", category: "自然科学" },
+    { id: 103, title: "生命是什么", author: "薛定谔", emoji: "🧪", color: "#d1fae5", tags: ["生物", "物理"], rating: 4.6, pages: 180, year: 1944, desc: "诺贝尔奖得主从物理学角度探讨生命的本质，启发了分子生物学的发展。", category: "自然科学" },
+    { id: 104, title: "费曼物理学讲义", author: "理查德·费曼", emoji: "⚛️", color: "#dbeafe", tags: ["物理", "教材"], rating: 4.9, pages: 1200, year: 1963, desc: "物理学大师费曼的经典讲义，以独特的视角和幽默风格讲解物理学。", category: "自然科学" },
+    { id: 105, title: "哥德尔、艾舍尔、巴赫", author: "侯世达", emoji: "🎭", color: "#fce7f3", tags: ["数学", "哲学"], rating: 4.8, pages: 1050, year: 1979, desc: "探讨数理逻辑、人工智能、音乐和艺术的深层联系，一部奇书。", category: "自然科学" },
+    { id: 106, title: "昆虫记", author: "法布尔", emoji: "🐛", color: "#d1fae5", tags: ["生物", "自然"], rating: 4.8, pages: 800, year: 1879, desc: "法国昆虫学家的传世之作，用诗意的语言记录昆虫的生活。", category: "自然科学" },
+    { id: 107, title: "寂静的春天", author: "蕾切尔·卡森", emoji: "🌿", color: "#d1fae5", tags: ["环保", "生态"], rating: 4.7, pages: 368, year: 1962, desc: "现代环保运动的奠基之作，揭示了农药对生态环境的破坏。", category: "自然科学" },
+    { id: 108, title: "万物简史", author: "比尔·布莱森", emoji: "🌍", color: "#fef3c7", tags: ["科普", "综合"], rating: 4.6, pages: 560, year: 2003, desc: "用幽默风趣的语言讲述从大爆炸到生命诞生的科学史。", category: "自然科学" },
+    { id: 109, title: "量子力学史话", author: "曹天元", emoji: "🔮", color: "#ede9fe", tags: ["物理", "量子"], rating: 4.8, pages: 420, year: 2006, desc: "以讲故事的方式介绍量子力学的发展历程，通俗易懂。", category: "自然科学" },
+    { id: 110, title: "天才引导的历程", author: "威廉·邓纳姆", emoji: "📏", color: "#fef3c7", tags: ["数学", "历史"], rating: 4.7, pages: 320, year: 1990, desc: "介绍数学史上伟大定理的发现过程，展现数学之美。", category: "自然科学" },
+  ],
+  literature: [
+    { id: 5, title: "活着", author: "余华", emoji: "🌾", color: "#fef3c7", tags: ["当代", "感人"], rating: 4.9, pages: 191, year: 1993, desc: "讲述了福贵历经苦难却依然坚韧活着的故事，是对生命本真的深刻思考。", category: "文学小说" },
+    { id: 6, title: "百年孤独", author: "加西亚·马尔克斯", emoji: "🦋", color: "#e8d5f5", tags: ["魔幻", "经典"], rating: 4.8, pages: 420, year: 1967, desc: "拉丁美洲魔幻现实主义的巅峰之作，布恩迪亚家族百年兴衰史。", category: "文学小说" },
+    { id: 7, title: "红楼梦", author: "曹雪芹", emoji: "🏮", color: "#fce7f3", tags: ["古典", "名著"], rating: 4.9, pages: 1200, year: 1791, desc: "中国四大名著之首，以贾宝玉与林黛玉的爱情悲剧为线，描绘封建社会的全景图。", category: "文学小说" },
+    { id: 8, title: "挪威的森林", author: "村上春树", emoji: "🌲", color: "#d1fae5", tags: ["日本", "青春"], rating: 4.6, pages: 296, year: 1987, desc: "一部关于青春、失落与成长的小说，以细腻的笔触描写了青年渡边的爱情故事。", category: "文学小说" },
+    { id: 111, title: "围城", author: "钱钟书", emoji: "🏰", color: "#dbeafe", tags: ["现代", "讽刺"], rating: 4.8, pages: 359, year: 1947, desc: "中国现代文学经典，以幽默讽刺的笔调描写知识分子的生活。", category: "文学小说" },
+    { id: 112, title: "平凡的世界", author: "路遥", emoji: "🌅", color: "#fef3c7", tags: ["当代", "励志"], rating: 4.8, pages: 1100, year: 1986, desc: "描写改革开放初期中国农村青年的奋斗历程，激励了几代读者。", category: "文学小说" },
+    { id: 113, title: "白夜行", author: "东野圭吾", emoji: "🌙", color: "#1e293b", tags: ["推理", "悬疑"], rating: 4.7, pages: 520, year: 1999, desc: "日本推理小说巅峰之作，讲述两个少年跨越19年的命运纠葛。", category: "文学小说" },
+    { id: 114, title: "追风筝的人", author: "卡勒德·胡赛尼", emoji: "🪁", color: "#dbeafe", tags: ["成长", "救赎"], rating: 4.8, pages: 360, year: 2003, desc: "关于友谊、背叛与救赎的感人故事，背景是阿富汗的动荡历史。", category: "文学小说" },
+    { id: 115, title: "小王子", author: "圣埃克苏佩里", emoji: "🤴", color: "#fce7f3", tags: ["童话", "哲理"], rating: 4.9, pages: 96, year: 1943, desc: "写给大人的童话，用纯真的视角探讨爱、责任与人生的意义。", category: "文学小说" },
+    { id: 116, title: "1984", author: "乔治·奥威尔", emoji: "👁️", color: "#1e293b", tags: ["反乌托邦", "政治"], rating: 4.8, pages: 328, year: 1949, desc: "反乌托邦文学经典，描绘极权主义社会的恐怖景象。", category: "文学小说" },
+    { id: 117, title: "了不起的盖茨比", author: "菲茨杰拉德", emoji: "🍸", color: "#fef9c3", tags: ["美国", "经典"], rating: 4.6, pages: 180, year: 1925, desc: "美国梦的幻灭，爵士时代的华丽与空虚。", category: "文学小说" },
+    { id: 118, title: "解忧杂货店", author: "东野圭吾", emoji: "📮", color: "#fef3c7", tags: ["温暖", "治愈"], rating: 4.7, pages: 290, year: 2012, desc: "一家能解答烦恼的杂货店，连接过去与未来的温暖故事。", category: "文学小说" },
+    { id: 119, title: "月亮与六便士", author: "毛姆", emoji: "🌙", color: "#e8d5f5", tags: ["艺术", "追求"], rating: 4.6, pages: 280, year: 1919, desc: "以高更为原型，讲述一个中年男人放弃一切追求艺术理想的故事。", category: "文学小说" },
+    { id: 120, title: "霍乱时期的爱情", author: "马尔克斯", emoji: "💌", color: "#fce7f3", tags: ["爱情", "经典"], rating: 4.7, pages: 400, year: 1985, desc: "一段跨越半个多世纪的爱情史诗，展现了爱情的各种形态。", category: "文学小说" },
+    { id: 121, title: "三体", author: "刘慈欣", emoji: "🌌", color: "#1e293b", tags: ["科幻", "雨果奖"], rating: 4.9, pages: 302, year: 2008, desc: "中国科幻巅峰之作，讲述人类与外星文明的接触。", category: "文学小说" },
+    { id: 122, title: "嫌疑人X的献身", author: "东野圭吾", emoji: "🔢", color: "#1e293b", tags: ["推理", "悬疑"], rating: 4.7, pages: 280, year: 2005, desc: "数学天才为保护所爱之人设计的完美犯罪，直木奖获奖作品。", category: "文学小说" },
+    { id: 123, title: "傲慢与偏见", author: "简·奥斯汀", emoji: "💃", color: "#fce7f3", tags: ["爱情", "经典"], rating: 4.7, pages: 280, year: 1813, desc: "英国文学经典，以幽默笔调描写19世纪英国乡绅阶层的婚恋观。", category: "文学小说" },
+    { id: 124, title: "骆驼祥子", author: "老舍", emoji: "🐫", color: "#fef3c7", tags: ["现代", "悲剧"], rating: 4.6, pages: 240, year: 1937, desc: "描写旧北京人力车夫祥子的悲惨命运，展现社会底层人民的苦难。", category: "文学小说" },
+  ],
+  history: [
+    { id: 9, title: "人类简史", author: "尤瓦尔·赫拉利", emoji: "🦴", color: "#fef3c7", tags: ["历史", "人文"], rating: 4.8, pages: 440, year: 2011, desc: "从十万年前有生命迹象开始到21世纪资本、政治交织的世界，重新审视人类历史。", category: "历史人文" },
+    { id: 10, title: "史记", author: "司马迁", emoji: "📜", color: "#d1fae5", tags: ["古典", "历史"], rating: 4.9, pages: 3300, year: -91, desc: "中国第一部纪传体通史，记载了上古到汉武帝时期三千年的历史。", category: "历史人文" },
+    { id: 11, title: "明朝那些事儿", author: "当年明月", emoji: "🏰", color: "#dbeafe", tags: ["明史", "通俗"], rating: 4.7, pages: 2000, year: 2006, desc: "用现代幽默语言讲述明朝三百年历史，让历史变得生动有趣、引人入胜。", category: "历史人文" },
+    { id: 12, title: "世界简史", author: "H·G·威尔斯", emoji: "🌍", color: "#ede9fe", tags: ["世界", "通史"], rating: 4.5, pages: 520, year: 1922, desc: "从宇宙起源到现代文明，以宏观视角叙述人类文明的发展历程。", category: "历史人文" },
+    { id: 125, title: "万历十五年", author: "黄仁宇", emoji: "📅", color: "#fef3c7", tags: ["明史", "学术"], rating: 4.7, pages: 280, year: 1981, desc: "以大历史观分析明朝衰落的深层原因，历史写作的经典。", category: "历史人文" },
+    { id: 126, title: "枪炮、病菌与钢铁", author: "贾雷德·戴蒙德", emoji: "🔫", color: "#d1fae5", tags: ["人类学", "历史"], rating: 4.6, pages: 480, year: 1997, desc: "探讨为什么不同大陆的人类发展如此不同，普利策奖获奖作品。", category: "历史人文" },
+    { id: 127, title: "中国历代政治得失", author: "钱穆", emoji: "⚖️", color: "#fef9c3", tags: ["政治", "历史"], rating: 4.7, pages: 180, year: 1952, desc: "史学大师钱穆分析汉唐宋明清五代的政治制度得失。", category: "历史人文" },
+    { id: 128, title: "全球通史", author: "斯塔夫里阿诺斯", emoji: "🌐", color: "#dbeafe", tags: ["世界", "通史"], rating: 4.5, pages: 800, year: 1970, desc: "从全球视角讲述人类历史，强调不同文明之间的互动。", category: "历史人文" },
+    { id: 129, title: "叫魂", author: "孔飞力", emoji: "👻", color: "#1e293b", tags: ["清史", "社会"], rating: 4.6, pages: 368, year: 1990, desc: "通过乾隆年间的一场妖术恐慌，揭示中国官僚体制的运作。", category: "历史人文" },
+    { id: 130, title: "东晋门阀政治", author: "田余庆", emoji: "🏛️", color: "#fef3c7", tags: ["魏晋", "学术"], rating: 4.7, pages: 320, year: 1989, desc: "深入研究东晋时期门阀士族与皇权的关系。", category: "历史人文" },
+    { id: 131, title: "罗马人的故事", author: "盐野七生", emoji: "🏛️", color: "#fef9c3", tags: ["罗马", "历史"], rating: 4.6, pages: 3000, year: 1992, desc: "日本作家以15卷篇幅讲述罗马帝国的兴衰历程。", category: "历史人文" },
+    { id: 132, title: "天朝的崩溃", author: "茅海建", emoji: "⚓", color: "#dbeafe", tags: ["近代", "鸦片战争"], rating: 4.7, pages: 520, year: 1995, desc: "重新审视鸦片战争，分析清朝失败的原因。", category: "历史人文" },
+  ],
+  tech: [
+    { id: 13, title: "Python编程从入门到实践", author: "埃里克·马瑟斯", emoji: "🐍", color: "#d1fae5", tags: ["Python", "编程"], rating: 4.7, pages: 459, year: 2016, desc: "最适合初学者的Python教程，通过项目实践学习编程，包含游戏、可视化、Web应用等。", category: "科技编程" },
+    { id: 14, title: "人工智能：一种现代方法", author: "拉塞尔、诺维格", emoji: "🤖", color: "#ede9fe", tags: ["AI", "算法"], rating: 4.8, pages: 1200, year: 1995, desc: "人工智能领域最权威的教材，全面涵盖AI的各个方面。", category: "科技编程" },
+    { id: 15, title: "浪潮之巅", author: "吴军", emoji: "🌊", color: "#dbeafe", tags: ["科技史", "商业"], rating: 4.6, pages: 620, year: 2011, desc: "讲述IT产业发展史上最重要的公司和人物，揭示科技发展的规律。", category: "科技编程" },
+    { id: 133, title: "算法导论", author: "Cormen等", emoji: "📊", color: "#d1fae5", tags: ["算法", "计算机"], rating: 4.8, pages: 1312, year: 1990, desc: "计算机算法领域的圣经，全面系统地介绍各种算法。", category: "科技编程" },
+    { id: 134, title: "深入理解计算机系统", author: "Randal Bryant", emoji: "💻", color: "#dbeafe", tags: ["系统", "底层"], rating: 4.9, pages: 800, year: 2003, desc: "从程序员视角理解计算机系统，CSAPP经典教材。", category: "科技编程" },
+    { id: 135, title: "代码大全", author: "Steve McConnell", emoji: "📘", color: "#ede9fe", tags: ["编程", "实践"], rating: 4.7, pages: 960, year: 1993, desc: "软件开发的百科全书，涵盖编程的方方面面。", category: "科技编程" },
+    { id: 136, title: "黑客与画家", author: "保罗·格雷厄姆", emoji: "🎨", color: "#fce7f3", tags: ["创业", "编程"], rating: 4.5, pages: 280, year: 2004, desc: "硅谷创业教父的文集，探讨编程、创业和创意工作。", category: "科技编程" },
+    { id: 137, title: "人月神话", author: "Frederick Brooks", emoji: "📅", color: "#fef3c7", tags: ["软件工程", "管理"], rating: 4.6, pages: 320, year: 1975, desc: "软件工程领域的经典，探讨软件项目管理的本质困难。", category: "科技编程" },
+    { id: 138, title: "深度学习", author: "Ian Goodfellow", emoji: "🧠", color: "#ede9fe", tags: ["AI", "深度学习"], rating: 4.7, pages: 800, year: 2016, desc: "深度学习领域的权威教材，由该领域的顶尖专家撰写。", category: "科技编程" },
+    { id: 139, title: "JavaScript高级程序设计", author: "Matt Frisbie", emoji: "📜", color: "#fef9c3", tags: ["JS", "前端"], rating: 4.7, pages: 800, year: 2020, desc: "前端开发必读经典，全面深入地讲解JavaScript。", category: "科技编程" },
+    { id: 140, title: "Clean Code", author: "Robert Martin", emoji: "✨", color: "#d1fae5", tags: ["编程", "规范"], rating: 4.6, pages: 464, year: 2008, desc: "代码整洁之道，教你如何写出高质量的代码。", category: "科技编程" },
+    { id: 141, title: "设计模式", author: "GoF", emoji: "🏗️", color: "#dbeafe", tags: ["架构", "设计"], rating: 4.5, pages: 395, year: 1994, desc: "软件设计模式的奠基之作，23种经典设计模式。", category: "科技编程" },
+    { id: 142, title: "编程珠玑", author: "Jon Bentley", emoji: "💎", color: "#fef3c7", tags: ["算法", "技巧"], rating: 4.6, pages: 256, year: 1986, desc: "通过实际问题讲解编程技巧和算法思维。", category: "科技编程" },
+    { id: 143, title: "重构", author: "Martin Fowler", emoji: "🔧", color: "#d1fae5", tags: ["重构", "代码"], rating: 4.7, pages: 431, year: 1999, desc: "改善既有代码的设计，程序员必备技能。", category: "科技编程" },
+  ],
+  selfHelp: [
+    { id: 16, title: "原则", author: "瑞·达利欧", emoji: "⚖️", color: "#fef3c7", tags: ["原则", "成功"], rating: 4.5, pages: 680, year: 2017, desc: "桥水基金创始人分享其独特的人生与工作原则，揭示成功的底层逻辑。", category: "励志成长" },
+    { id: 17, title: "被讨厌的勇气", author: "岸见一郎", emoji: "💪", color: "#d1fae5", tags: ["心理", "成长"], rating: 4.6, pages: 247, year: 2013, desc: "以阿德勒哲学为基础，用对话形式探讨如何获得幸福，学会课题分离。", category: "励志成长" },
+    { id: 18, title: "终身成长", author: "卡罗尔·德韦克", emoji: "🌱", color: "#e8d5f5", tags: ["心理学", "思维"], rating: 4.5, pages: 288, year: 2006, desc: "揭示成长型思维与固定型思维的区别，帮助读者突破思维限制，实现潜能。", category: "励志成长" },
+    { id: 144, title: "如何阅读一本书", author: "莫提默·艾德勒", emoji: "📖", color: "#fef9c3", tags: ["阅读", "方法"], rating: 4.5, pages: 376, year: 1940, desc: "阅读方法的经典指南，教你如何深入阅读各类书籍。", category: "励志成长" },
+    { id: 145, title: "刻意练习", author: "安德斯·艾利克森", emoji: "🎯", color: "#dbeafe", tags: ["学习", "技能"], rating: 4.5, pages: 320, year: 1993, desc: "揭示专家级技能背后的训练方法，打破天赋决定论。", category: "励志成长" },
+    { id: 146, title: "非暴力沟通", author: "马歇尔·卢森堡", emoji: "🕊️", color: "#d1fae5", tags: ["沟通", "关系"], rating: 4.6, pages: 264, year: 1999, desc: "一种沟通方式，帮助人们建立更深层的理解和连接。", category: "励志成长" },
+    { id: 147, title: "高效能人士的七个习惯", author: "史蒂芬·柯维", emoji: "7️⃣", color: "#fef3c7", tags: ["效率", "习惯"], rating: 4.5, pages: 432, year: 1989, desc: "个人效能提升的经典，七个习惯改变人生。", category: "励志成长" },
+    { id: 148, title: "思考，快与慢", author: "丹尼尔·卡尼曼", emoji: "🧠", color: "#ede9fe", tags: ["思维", "心理学"], rating: 4.5, pages: 499, year: 2011, desc: "诺贝尔奖得主揭示人类思维的两种模式，理解决策背后的心理机制。", category: "励志成长" },
+    { id: 149, title: "原子习惯", author: "詹姆斯·克利尔", emoji: "⚛️", color: "#d1fae5", tags: ["习惯", "改变"], rating: 4.6, pages: 320, year: 2018, desc: "微小改变带来巨大成果，建立好习惯的实用指南。", category: "励志成长" },
+    { id: 150, title: "心流", author: "米哈里·契克森米哈赖", emoji: "🌊", color: "#dbeafe", tags: ["专注", "幸福"], rating: 4.5, pages: 336, year: 1990, desc: "探讨最优体验心理学，如何在做事中找到沉浸感。", category: "励志成长" },
+    { id: 151, title: "少有人走的路", author: "M·斯科特·派克", emoji: "🛤️", color: "#fef9c3", tags: ["成长", "心理"], rating: 4.6, pages: 280, year: 1978, desc: "心智成熟的旅程，探讨自律、爱与成长的真谛。", category: "励志成长" },
+    { id: 152, title: "自控力", author: "凯利·麦格尼格尔", emoji: "🎮", color: "#fce7f3", tags: ["意志力", "自控"], rating: 4.4, pages: 280, year: 2011, desc: "斯坦福大学心理学课程，科学提升自控力的方法。", category: "励志成长" },
+    { id: 153, title: "深度工作", author: "卡尔·纽波特", emoji: "🔍", color: "#dbeafe", tags: ["专注", "效率"], rating: 4.5, pages: 304, year: 2016, desc: "在碎片化时代如何保持深度专注，创造有价值的工作。", category: "励志成长" },
+  ],
+  art: [
+    { id: 19, title: "艺术的故事", author: "贡布里希", emoji: "🖼️", color: "#fce7f3", tags: ["艺术史", "西方"], rating: 4.9, pages: 688, year: 1950, desc: "世界上最著名的艺术史著作，从史前时代到现代艺术，生动叙述艺术发展史。", category: "艺术设计" },
+    { id: 20, title: "设计中的设计", author: "原研哉", emoji: "✏️", color: "#dbeafe", tags: ["设计", "日本"], rating: 4.6, pages: 259, year: 2003, desc: "无印良品设计总监原研哉的设计理念，探讨设计的本质与生活美学。", category: "艺术设计" },
+    { id: 154, title: "写给大家的西方美术史", author: "蒋勋", emoji: "🎨", color: "#fce7f3", tags: ["艺术史", "入门"], rating: 4.6, pages: 320, year: 2003, desc: "蒋勋以优美文字讲述西方美术史，适合艺术入门。", category: "艺术设计" },
+    { id: 155, title: "配色设计原理", author: "奥博斯科", emoji: "🌈", color: "#fef9c3", tags: ["设计", "配色"], rating: 4.5, pages: 192, year: 2007, desc: "实用的配色指南，讲解色彩理论和搭配技巧。", category: "艺术设计" },
+    { id: 156, title: "字体设计原理", author: "伊达千代", emoji: "🔤", color: "#dbeafe", tags: ["设计", "字体"], rating: 4.4, pages: 160, year: 2009, desc: "字体设计的基础知识，如何选择和搭配字体。", category: "艺术设计" },
+    { id: 157, title: "构图的艺术", author: "伊恩·罗伯茨", emoji: "📐", color: "#d1fae5", tags: ["绘画", "构图"], rating: 4.5, pages: 144, year: 2005, desc: "讲解绘画构图的原理和技巧，提升视觉表达能力。", category: "艺术设计" },
+    { id: 158, title: "美的历程", author: "李泽厚", emoji: "🏛️", color: "#fef3c7", tags: ["美学", "中国"], rating: 4.7, pages: 280, year: 1981, desc: "中国美学的经典之作，从远古到明清的美学发展。", category: "艺术设计" },
+    { id: 159, title: "平面设计中的网格系统", author: "约瑟夫·米勒", emoji: "📏", color: "#dbeafe", tags: ["设计", "网格"], rating: 4.6, pages: 176, year: 1981, desc: "网格系统设计的经典教材，版面设计必读。", category: "艺术设计" },
+    { id: 160, title: "摄影构图学", author: "本·克莱门茨", emoji: "📷", color: "#d1fae5", tags: ["摄影", "构图"], rating: 4.5, pages: 240, year: 1971, desc: "摄影构图的经典教材，讲解视觉元素的组织。", category: "艺术设计" },
+  ],
+  classics: [
+    { id: 21, title: "论语", author: "孔子", emoji: "☯️", color: "#fef3c7", tags: ["儒学", "经典"], rating: 4.9, pages: 220, year: -500, desc: "儒家思想的核心典籍，记录孔子及其弟子的言行，蕴含深刻的人生哲学。", category: "国学经典" },
+    { id: 22, title: "三国演义", author: "罗贯中", emoji: "⚔️", color: "#fee2e2", tags: ["历史", "名著"], rating: 4.8, pages: 950, year: 1522, desc: "描写东汉末年到三国鼎立时期历史故事，塑造了众多经典人物形象。", category: "文学小说" },
+    { id: 161, title: "道德经", author: "老子", emoji: "☯️", color: "#d1fae5", tags: ["道家", "哲学"], rating: 4.8, pages: 81, year: -600, desc: "道家思想的源头，五千言蕴含深邃的宇宙观和人生智慧。", category: "国学经典" },
+    { id: 162, title: "孙子兵法", author: "孙武", emoji: "⚔️", color: "#fee2e2", tags: ["兵法", "谋略"], rating: 4.7, pages: 120, year: -500, desc: "世界最古老的军事著作，其智慧应用于商业、管理等各领域。", category: "国学经典" },
+    { id: 163, title: "诗经", author: "佚名", emoji: "🌸", color: "#fce7f3", tags: ["诗歌", "古典"], rating: 4.8, pages: 500, year: -1000, desc: "中国最早的诗歌总集，风雅颂三大类，文学源头。", category: "国学经典" },
+    { id: 164, title: "楚辞", author: "屈原等", emoji: "🐉", color: "#dbeafe", tags: ["诗歌", "浪漫"], rating: 4.7, pages: 280, year: -300, desc: "中国浪漫主义文学的源头，屈原的离骚等作品。", category: "国学经典" },
+    { id: 165, title: "水浒传", author: "施耐庵", emoji: "🍶", color: "#d1fae5", tags: ["古典", "名著"], rating: 4.6, pages: 900, year: 1589, desc: "描写108位好汉聚义梁山的故事，中国四大名著之一。", category: "文学小说" },
+    { id: 166, title: "西游记", author: "吴承恩", emoji: "🐵", color: "#fef9c3", tags: ["神话", "名著"], rating: 4.7, pages: 860, year: 1592, desc: "唐僧师徒西天取经的神话故事，充满想象和哲理。", category: "文学小说" },
+    { id: 167, title: "古文观止", author: "吴楚材", emoji: "📜", color: "#fef3c7", tags: ["古文", "选集"], rating: 4.7, pages: 600, year: 1695, desc: "中国古代散文的精选集，学习古文的经典教材。", category: "国学经典" },
+    { id: 168, title: "唐诗三百首", author: "蘅塘退士", emoji: "🌙", color: "#e8d5f5", tags: ["诗歌", "唐诗"], rating: 4.8, pages: 350, year: 1763, desc: "唐诗的精选集，涵盖李白、杜甫等大家的代表作。", category: "国学经典" },
+    { id: 169, title: "宋词三百首", author: "上彊村民", emoji: "🎋", color: "#d1fae5", tags: ["诗歌", "宋词"], rating: 4.7, pages: 380, year: 1924, desc: "宋词的精选集，苏轼、李清照、辛弃疾等名家作品。", category: "国学经典" },
+    { id: 170, title: "世说新语", author: "刘义庆", emoji: "🎭", color: "#fef9c3", tags: ["笔记", "魏晋"], rating: 4.6, pages: 320, year: 420, desc: "记录魏晋名士的言行轶事，展现那个时代的风度。", category: "国学经典" },
+  ],
+  philosophy: [
+    { id: 171, title: "苏菲的世界", author: "乔斯坦·贾德", emoji: "🌍", color: "#ede9fe", tags: ["哲学", "入门"], rating: 4.6, pages: 520, year: 1991, desc: "以小说形式介绍西方哲学史，适合哲学入门。", category: "哲学思想" },
+    { id: 172, title: "西方哲学史", author: "罗素", emoji: "🏛️", color: "#dbeafe", tags: ["哲学", "历史"], rating: 4.5, pages: 800, year: 1945, desc: "诺贝尔奖得主罗素撰写的西方哲学史，观点独特。", category: "哲学思想" },
+    { id: 173, title: "理想国", author: "柏拉图", emoji: "🏛️", color: "#fef9c3", tags: ["哲学", "政治"], rating: 4.6, pages: 400, year: -375, desc: "西方哲学的奠基之作，探讨正义与理想国家。", category: "哲学思想" },
+    { id: 174, title: "存在与时间", author: "海德格尔", emoji: "⏰", color: "#1e293b", tags: ["哲学", "存在主义"], rating: 4.4, pages: 600, year: 1927, desc: "20世纪最重要的哲学著作之一，探讨存在的意义。", category: "哲学思想" },
+    { id: 175, title: "查拉图斯特拉如是说", author: "尼采", emoji: "🦅", color: "#fef3c7", tags: ["哲学", "超人"], rating: 4.5, pages: 360, year: 1883, desc: "尼采的代表作，提出超人哲学和上帝已死的宣言。", category: "哲学思想" },
+    { id: 176, title: "忏悔录", author: "奥古斯丁", emoji: "✝️", color: "#fce7f3", tags: ["哲学", "宗教"], rating: 4.5, pages: 400, year: 398, desc: "西方自传文学的开山之作，探讨罪与救赎。", category: "哲学思想" },
+    { id: 177, title: "中国哲学简史", author: "冯友兰", emoji: "☯️", color: "#d1fae5", tags: ["哲学", "中国"], rating: 4.7, pages: 280, year: 1948, desc: "冯友兰为中国读者写的哲学入门书，简明扼要。", category: "哲学思想" },
+    { id: 178, title: "沉思录", author: "马可·奥勒留", emoji: "🧘", color: "#dbeafe", tags: ["哲学", "斯多葛"], rating: 4.6, pages: 200, year: 180, desc: "罗马皇帝的哲学日记，斯多葛派哲学的经典。", category: "哲学思想" },
+    { id: 179, title: "人生的智慧", author: "叔本华", emoji: "🦉", color: "#e8d5f5", tags: ["哲学", "人生"], rating: 4.5, pages: 280, year: 1851, desc: "叔本华晚年的思想精华，探讨如何获得幸福。", category: "哲学思想" },
+    { id: 180, title: "正义论", author: "罗尔斯", emoji: "⚖️", color: "#dbeafe", tags: ["哲学", "政治"], rating: 4.4, pages: 600, year: 1971, desc: "20世纪最重要的政治哲学著作，探讨正义原则。", category: "哲学思想" },
+  ],
+  economics: [
+    { id: 181, title: "经济学原理", author: "曼昆", emoji: "📈", color: "#d1fae5", tags: ["经济", "入门"], rating: 4.7, pages: 800, year: 1998, desc: "经济学最经典的入门教材，分为微观和宏观两册。", category: "经济管理" },
+    { id: 182, title: "国富论", author: "亚当·斯密", emoji: "💰", color: "#fef9c3", tags: ["经济", "经典"], rating: 4.5, pages: 900, year: 1776, desc: "现代经济学的奠基之作，提出看不见的手理论。", category: "经济管理" },
+    { id: 183, title: "资本论", author: "马克思", emoji: "📕", color: "#fee2e2", tags: ["经济", "政治"], rating: 4.4, pages: 2400, year: 1867, desc: "马克思主义经济学的经典，分析资本主义生产方式。", category: "经济管理" },
+    { id: 184, title: "穷爸爸富爸爸", author: "罗伯特·清崎", emoji: "💵", color: "#fef3c7", tags: ["理财", "财商"], rating: 4.3, pages: 280, year: 1997, desc: "财商教育的经典，改变人们对金钱和投资的看法。", category: "经济管理" },
+    { id: 185, title: "聪明的投资者", author: "本杰明·格雷厄姆", emoji: "📊", color: "#d1fae5", tags: ["投资", "股票"], rating: 4.6, pages: 640, year: 1949, desc: "价值投资的圣经，巴菲特的导师所著。", category: "经济管理" },
+    { id: 186, title: "思考，快与慢", author: "丹尼尔·卡尼曼", emoji: "🧠", color: "#ede9fe", tags: ["行为经济", "心理"], rating: 4.5, pages: 499, year: 2011, desc: "行为经济学的经典，揭示人类决策中的认知偏差。", category: "经济管理" },
+    { id: 187, title: "创新者的窘境", author: "克莱顿·克里斯坦森", emoji: "💡", color: "#fef9c3", tags: ["商业", "创新"], rating: 4.5, pages: 320, year: 1997, desc: "探讨为什么优秀的企业会失败，颠覆性创新理论。", category: "经济管理" },
+    { id: 188, title: "从0到1", author: "彼得·蒂尔", emoji: "🚀", color: "#dbeafe", tags: ["创业", "商业"], rating: 4.4, pages: 260, year: 2014, desc: "PayPal创始人分享创业心得，如何创造垄断性企业。", category: "经济管理" },
+  ],
+  biography: [
+    { id: 189, title: "史蒂夫·乔布斯传", author: "沃尔特·艾萨克森", emoji: "🍎", color: "#d1fae5", tags: ["传记", "科技"], rating: 4.6, pages: 560, year: 2011, desc: "乔布斯唯一授权的官方传记，展现这位科技天才的一生。", category: "人物传记" },
+    { id: 190, title: "富兰克林自传", author: "本杰明·富兰克林", emoji: "⚡", color: "#fef9c3", tags: ["传记", "经典"], rating: 4.5, pages: 240, year: 1791, desc: "美国开国元勋的自传，展现他的奋斗历程和人生智慧。", category: "人物传记" },
+    { id: 191, title: "苏东坡传", author: "林语堂", emoji: "🎋", color: "#d1fae5", tags: ["传记", "文学"], rating: 4.6, pages: 320, year: 1947, desc: "林语堂笔下的苏东坡，展现这位文豪的才华与人生态度。", category: "人物传记" },
+    { id: 192, title: "拿破仑传", author: "埃米尔·路德维希", emoji: "👑", color: "#fef3c7", tags: ["传记", "历史"], rating: 4.5, pages: 480, year: 1925, desc: "法国传奇皇帝的传记，展现他的军事天才与悲剧命运。", category: "人物传记" },
+    { id: 193, title: "邓小平时代", author: "傅高义", emoji: "🇨🇳", color: "#fee2e2", tags: ["传记", "政治"], rating: 4.6, pages: 700, year: 2011, desc: "哈佛大学学者撰写的邓小平传记，客观展现改革开放历程。", category: "人物传记" },
+    { id: 194, title: "爱因斯坦传", author: "沃尔特·艾萨克森", emoji: "⚛️", color: "#dbeafe", tags: ["传记", "科学"], rating: 4.6, pages: 680, year: 2007, desc: "科学巨匠爱因斯坦的生平，展现他的科学贡献和人格魅力。", category: "人物传记" },
+    { id: 195, title: "梵高传", author: "欧文·斯通", emoji: "🌻", color: "#fef9c3", tags: ["传记", "艺术"], rating: 4.5, pages: 520, year: 1934, desc: "艺术家梵高的传记小说，展现他充满激情与痛苦的一生。", category: "人物传记" },
+    { id: 196, title: "居里夫人传", author: "艾芙·居里", emoji: "☢️", color: "#ede9fe", tags: ["传记", "科学"], rating: 4.6, pages: 360, year: 1937, desc: "居里夫人的女儿撰写的传记，展现这位伟大科学家的生平。", category: "人物传记" },
+  ],
+  new: [
+    { id: 23, title: "存在主义心理治疗", author: "欧文·亚隆", emoji: "🧠", color: "#ede9fe", tags: ["心理", "哲学"], rating: 4.7, pages: 520, year: 1980, desc: "从死亡、自由、孤独、无意义四个终极关怀出发，探索心理治疗的新路径。", category: "心理学" },
+    { id: 24, title: "沉默的大多数", author: "王小波", emoji: "✍️", color: "#d1fae5", tags: ["杂文", "当代"], rating: 4.8, pages: 380, year: 1997, desc: "王小波最具代表性的杂文集，以幽默犀利的笔调批判社会现象，充满智慧。", category: "文学小说" },
+    { id: 197, title: "也许你该找个人聊聊", author: "洛莉·戈特利布", emoji: "🛋️", color: "#fce7f3", tags: ["心理", "治愈"], rating: 4.6, pages: 440, year: 2019, desc: "心理治疗师的回忆录，展现心理治疗的真实过程。", category: "心理学" },
+    { id: 198, title: "置身事内", author: "兰小欢", emoji: "🏛️", color: "#dbeafe", tags: ["经济", "政治"], rating: 4.7, pages: 320, year: 2021, desc: "解读中国政府与经济发展的关系，理解中国模式的必读书。", category: "经济管理" },
+    { id: 199, title: "纳瓦尔宝典", author: "埃里克·乔根森", emoji: "💎", color: "#fef9c3", tags: ["财富", "幸福"], rating: 4.5, pages: 280, year: 2020, desc: "硅谷投资人纳瓦尔的智慧语录，关于财富和幸福的思考。", category: "励志成长" },
+    { id: 200, title: "置身事内", author: "兰小欢", emoji: "📊", color: "#d1fae5", tags: ["中国", "经济"], rating: 4.7, pages: 320, year: 2021, desc: "复旦大学教授解读中国政府在经济发展中的角色。", category: "经济管理" },
+  ]
+};
+
+// 所有书扁平化
+const ALL_BOOKS = Object.values(BOOKS_DB).flat();
+
+// ============================================================
+// 智能推荐逻辑 - 关键词映射（匹配100本书）
+// ============================================================
+const KEYWORD_MAP = [
+  // 科幻
+  { keywords: ["科幻", "科幻小说", "太空", "未来", "宇宙", "三体", "刘慈欣"], books: [121, 1, 102, 6] },
+  // 自然科学
+  { keywords: ["自然科学", "科学", "物理", "生物", "数学", "量子", "进化", "宇宙学"], books: [1, 2, 3, 4, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110] },
+  // 文学小说
+  { keywords: ["文学", "小说", "故事", "散文", "余华", "村上春树", "马尔克斯"], books: [5, 6, 7, 8, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124] },
+  // 推理悬疑
+  { keywords: ["悬疑", "推理", "侦探", "东野圭吾", "犯罪", "破案"], books: [113, 122, 6] },
+  // 历史
+  { keywords: ["历史", "人文", "古代", "中国历史", "明朝", "清朝", "史记", "罗马"], books: [9, 10, 11, 12, 125, 126, 127, 128, 129, 130, 131, 132] },
+  // 编程科技
+  { keywords: ["编程", "程序", "代码", "python", "计算机", "人工智能", "AI", "算法", "前端", "软件"], books: [13, 14, 15, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143] },
+  // 励志成长
+  { keywords: ["励志", "成长", "成功", "心理", "积极", "习惯", "自控", "沟通", "学习", "效率"], books: [16, 17, 18, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 199] },
+  // 艺术设计
+  { keywords: ["艺术", "设计", "绘画", "美术", "摄影", "配色", "字体", "美学"], books: [19, 20, 154, 155, 156, 157, 158, 159, 160] },
+  // 国学经典
+  { keywords: ["古典", "经典", "名著", "四大名著", "国学", "论语", "道德经", "诗经", "唐诗", "宋词", "古文"], books: [7, 21, 22, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170] },
+  // 高考高中
+  { keywords: ["高考", "高中", "课外", "语文", "作文", "必读", "名著导读"], books: [5, 7, 10, 22, 115, 123, 124, 163, 167, 168, 169] },
+  // 新书推荐
+  { keywords: ["最新", "新书", "新到", "最近", "热门", "畅销"], books: [197, 198, 199, 200, 149, 138, 139] },
+  // 随机
+  { keywords: ["随机", "随便", "任意", "推荐一本"], books: "random" },
+  // 写作
+  { keywords: ["写作", "作文", "表达", "语言", "文笔", "创作"], books: [144, 5, 8, 24, 7, 167] },
+  // 哲学
+  { keywords: ["哲学", "思想", "人生", "存在主义", "尼采", "柏拉图", "智慧"], books: [171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 21, 161] },
+  // 经济商业
+  { keywords: ["经济", "商业", "金融", "管理", "投资", "理财", "创业", "股票", "财富"], books: [181, 182, 183, 184, 185, 186, 187, 188, 198, 200, 15, 16] },
+  // 人物传记
+  { keywords: ["传记", "自传", "人物", "乔布斯", "爱因斯坦", "苏东坡", "拿破仑", "居里夫人", "梵高"], books: [189, 190, 191, 192, 193, 194, 195, 196] },
+  // 心理学
+  { keywords: ["心理学", "心理治疗", "情绪", "抑郁", "焦虑", "治愈", "心理咨询"], books: [23, 197, 148, 17, 18, 152] },
+  // 爱情
+  { keywords: ["爱情", "恋爱", "感情", "婚姻", "浪漫"], books: [7, 8, 115, 120, 123, 114, 118] },
+  // 日本文学
+  { keywords: ["日本", "日本文学", "东野圭吾", "村上春树", "日系"], books: [8, 113, 118, 122, 119] },
+  // 童话
+  { keywords: ["童话", "儿童文学", "寓言", "小王子"], books: [115] },
+  // 反乌托邦
+  { keywords: ["反乌托邦", "政治", "社会", "1984"], books: [116] },
+  // 环保生态
+  { keywords: ["环保", "生态", "自然", "环境", "绿色"], books: [107, 106] },
+  // 军事战争
+  { keywords: ["军事", "战争", "兵法", "战略", "孙子兵法"], books: [162, 22, 132] },
+  // 诗歌
+  { keywords: ["诗歌", "诗", "诗人", "李白", "杜甫", "苏轼"], books: [163, 164, 168, 169] },
+  // 宗教
+  { keywords: ["宗教", "佛教", "基督教", "信仰", "精神"], books: [176, 21, 161] },
+];
+
+// ============================================================
+// 对话逻辑
+// ============================================================
+const RESPONSES = {
+  greeting: ["嗨！很高兴见到你😊 有什么书想找吗？", "你好！我是BookBot，你的图书馆小助手！想找什么类型的书？"],
+  thanks: ["不客气！希望这些书对你有帮助📚", "随时来找我，书海无涯，一起探索！✨"],
+  bye: ["再见！祝你阅读愉快📖", "拜拜～有需要随时来找我哦！"],
+  unknown: [
+    "这个问题有点复杂，让我换个方式帮你。你能描述一下你感兴趣的主题吗？",
+    "嗯...我对这个不是很确定。你可以试试告诉我喜欢的书籍类型或主题～",
+    "好问题！不过我更擅长图书推荐。告诉我你的阅读偏好，我来找最适合的书给你！"
+  ]
+};
+
+function getRandomResponse(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function getBooksByIds(ids) {
+  if (ids === "random") {
+    const all = ALL_BOOKS;
+    return [all[Math.floor(Math.random() * all.length)]];
+  }
+  return ids.map(id => ALL_BOOKS.find(b => b.id === id)).filter(Boolean);
+}
+
+function processMessage(text) {
+  const lower = text.toLowerCase();
+
+  // 问候
+  if (/你好|hi|hello|嗨|哈喽|在吗/.test(lower)) {
+    return { type: "text", content: getRandomResponse(RESPONSES.greeting) };
+  }
+
+  // 感谢
+  if (/谢谢|感谢|thx|thanks/.test(lower)) {
+    return { type: "text", content: getRandomResponse(RESPONSES.thanks) };
+  }
+
+  // 再见
+  if (/再见|拜拜|bye|结束|退出/.test(lower)) {
+    return { type: "text", content: getRandomResponse(RESPONSES.bye) };
+  }
+
+  // 馆藏查询
+  if (/多少本|馆藏|借书|还书|开馆|营业时间/.test(lower)) {
+    return {
+      type: "text",
+      content: "📊 **图书馆信息**\n\n🏫 馆藏图书：**12,680本**\n📅 开馆时间：**8:00 - 21:00（全年无休）**\n📌 借阅规则：每次最多借 **5本**，借期 **30天**\n📞 联系电话：**0792-xxxxxxx**\n\n如需查询某本书是否在馆，请直接告诉我书名！"
+    };
+  }
+
+  // 关键词匹配 → 书籍推荐
+  for (const rule of KEYWORD_MAP) {
+    if (rule.keywords.some(kw => lower.includes(kw))) {
+      const books = getBooksByIds(rule.books);
+      const intro = rule.extra ? rule.extra + "\n\n" : "";
+      return {
+        type: "books",
+        content: intro + `根据你的兴趣，为你推荐以下书目：`,
+        books: books
+      };
+    }
+  }
+
+  // 数字/ISBN 搜索
+  if (/找|查|有没有|搜/.test(lower)) {
+    const found = ALL_BOOKS.filter(b =>
+      b.title.includes(text) || b.author.includes(text)
+    );
+    if (found.length > 0) {
+      return {
+        type: "books",
+        content: `找到了！以下是相关书目：`,
+        books: found
+      };
+    }
+  }
+
+  // 兜底随机推荐
+  const randomBooks = [...ALL_BOOKS].sort(() => Math.random() - 0.5).slice(0, 3);
+  return {
+    type: "books",
+    content: `我来为你挑选几本好书，希望有你感兴趣的～`,
+    books: randomBooks
+  };
+}
+
+// ============================================================
+// DeepSeek API 配置管理
+// ============================================================
+let DEEPSEEK_API_KEY = localStorage.getItem('ds_api_key') || '';
+let DEEPSEEK_API_BASE = localStorage.getItem('ds_api_base') || 'https://api.deepseek.com';
+
+function updateApiStatusBadge() {
+  const badge = document.getElementById('apiStatusBadge');
+  if (!badge) return;
+  if (DEEPSEEK_API_KEY) {
+    badge.className = 'api-status connected';
+    badge.textContent = '✦ AI 已接入';
+  } else {
+    badge.className = 'api-status disconnected';
+    badge.textContent = '● 本地模式';
+  }
+}
+
+// 检查是否需要显示首次使用引导
+function checkFirstTimeSetup() {
+  if (!DEEPSEEK_API_KEY) {
+    // 延迟显示，等页面加载完成
+    setTimeout(() => {
+      showWelcomeGuide();
+    }, 500);
+  }
+}
+
+// 显示欢迎引导
+function showWelcomeGuide() {
+  const guideHtml = `
+    <div style="background: linear-gradient(135deg, #4f46e5, #3730a3); color: white; padding: 20px; border-radius: 16px; margin-bottom: 16px;">
+      <div style="font-size: 24px; margin-bottom: 12px;">👋 欢迎使用 BookBot！</div>
+      <div style="font-size: 14px; line-height: 1.6; opacity: 0.95;">
+        <p style="margin-bottom: 12px;">我是你的智能图书推荐助手，目前运行在<strong>本地模式</strong>。</p>
+        <p style="margin-bottom: 12px;">要解锁 AI 智能推荐功能，请配置你的 DeepSeek API Key：</p>
+        <div style="background: rgba(255,255,255,0.15); padding: 12px; border-radius: 8px; margin: 12px 0;">
+          <div style="font-size: 12px; margin-bottom: 8px;">💡 获取方式：</div>
+          <div style="font-size: 13px;">1. 访问 <a href="https://platform.deepseek.com" target="_blank" style="color: #fef08a; text-decoration: underline;">platform.deepseek.com</a></div>
+          <div style="font-size: 13px;">2. 注册账号 → 创建 API Key</div>
+          <div style="font-size: 13px;">3. 复制 Key 粘贴到下方</div>
+        </div>
+      </div>
+      <button onclick="openSettingsFromGuide()" style="background: white; color: #4f46e5; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 8px;">
+        🔑 配置 API Key
+      </button>
+      <button onclick="skipGuide()" style="background: transparent; color: rgba(255,255,255,0.8); border: 1px solid rgba(255,255,255,0.3); padding: 10px 20px; border-radius: 8px; font-size: 14px; cursor: pointer; margin-top: 8px; margin-left: 8px;">
+        稍后再说
+      </button>
+    </div>
+  `;
+  
+  const chatArea = document.getElementById('chatArea');
+  const welcomeDiv = document.createElement('div');
+  welcomeDiv.id = 'welcomeGuide';
+  welcomeDiv.innerHTML = guideHtml;
+  chatArea.insertBefore(welcomeDiv, chatArea.firstChild);
+}
+
+function openSettingsFromGuide() {
+  const guide = document.getElementById('welcomeGuide');
+  if (guide) guide.remove();
+  openSettings();
+}
+
+function skipGuide() {
+  const guide = document.getElementById('welcomeGuide');
+  if (guide) guide.remove();
+  addMessage('bot', '好的！你随时可以点击右上角的「DeepSeek设置」来配置 AI 功能。现在让我为你推荐一些好书吧～ 📚');
+}
+
+function openSettings() {
+  document.getElementById('settingsOverlay').style.display = 'flex';
+  document.getElementById('apiKeyInput').value = DEEPSEEK_API_KEY ? '●'.repeat(20) : '';
+  document.getElementById('apiBaseInput').value = DEEPSEEK_API_BASE !== 'https://api.deepseek.com' ? DEEPSEEK_API_BASE : '';
+  document.getElementById('settingsTestResult').style.display = 'none';
+}
+
+function closeSettings(e) {
+  if (!e || e.target === document.getElementById('settingsOverlay')) {
+    document.getElementById('settingsOverlay').style.display = 'none';
+  }
+}
+
+function saveSettings() {
+  const keyVal = document.getElementById('apiKeyInput').value.trim();
+  const baseVal = document.getElementById('apiBaseInput').value.trim();
+  // 如果是掩码（●），则不覆盖
+  if (keyVal && !keyVal.includes('●')) {
+    DEEPSEEK_API_KEY = keyVal;
+    localStorage.setItem('ds_api_key', keyVal);
+  }
+  DEEPSEEK_API_BASE = baseVal || 'https://api.deepseek.com';
+  localStorage.setItem('ds_api_base', DEEPSEEK_API_BASE);
+  updateApiStatusBadge();
+  document.getElementById('settingsOverlay').style.display = 'none';
+  if (DEEPSEEK_API_KEY) {
+    addMessage('bot', '✅ DeepSeek AI 已配置成功！现在我拥有了真正的智能对话能力，可以和你深度聊书啦～🎉');
+  }
+}
+
+function clearApiKey() {
+  DEEPSEEK_API_KEY = '';
+  DEEPSEEK_API_BASE = 'https://api.deepseek.com';
+  localStorage.removeItem('ds_api_key');
+  localStorage.removeItem('ds_api_base');
+  document.getElementById('apiKeyInput').value = '';
+  document.getElementById('apiBaseInput').value = '';
+  updateApiStatusBadge();
+  showTestResult('已切换回本地推荐模式', false);
+}
+
+async function testConnection() {
+  const keyVal = document.getElementById('apiKeyInput').value.trim();
+  const baseVal = document.getElementById('apiBaseInput').value.trim();
+  const testKey = (keyVal && !keyVal.includes('●')) ? keyVal : DEEPSEEK_API_KEY;
+  const testBase = baseVal || 'https://api.deepseek.com';
+  if (!testKey) {
+    showTestResult('请先输入 API Key', false);
+    return;
+  }
+  showTestResult('⏳ 连接测试中...', null);
+  try {
+    const res = await fetch(`${testBase}/v1/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${testKey}` },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [{ role: 'user', content: '回复"OK"' }],
+        max_tokens: 5,
+        stream: false
+      })
+    });
+    if (res.ok) {
+      showTestResult('✅ 连接成功！API Key 有效', true);
+    } else {
+      const err = await res.json().catch(() => ({}));
+      showTestResult(`❌ 连接失败：${err?.error?.message || res.status}`, false);
+    }
+  } catch (e) {
+    showTestResult(`❌ 网络错误：${e.message}`, false);
+  }
+}
+
+function showTestResult(msg, ok) {
+  const el = document.getElementById('settingsTestResult');
+  el.style.display = 'block';
+  el.style.background = ok === true ? '#d1fae5' : ok === false ? '#fee2e2' : '#fef3c7';
+  el.style.color = ok === true ? '#065f46' : ok === false ? '#991b1b' : '#92400e';
+  el.textContent = msg;
+}
+
+// ============================================================
+// DeepSeek 流式对话
+// ============================================================
+
+// 检测用户是否要求详细讲解（专家模式触发词）
+function isExpertMode(userMessage) {
+  const expertTriggers = [
+    '详细', '详解', '深入', '谈谈', '聊聊', '介绍一下', '讲讲',
+    '为什么', '怎么样', '如何', '分析', '解读', '评价'
+  ];
+  const msg = userMessage.toLowerCase();
+  return expertTriggers.some(trigger => msg.includes(trigger));
+}
+
+// 构建图书库上下文（根据模式切换：简洁模式 vs 专家模式）
+function buildBookContext(isDetailed = false) {
+  const sampleBooks = ALL_BOOKS.slice(0, 30).map(b =>
+    `《${b.title}》(${b.author}, ${b.category}, 评分${b.rating}): ${b.desc}`
+  ).join('\n');
+  
+  if (isDetailed) {
+    // 专家模式：详细讲解
+    return `你是"都昌一中图书馆"的专业图书推荐专家BookBot。图书馆馆藏12,680本图书，系统收录了以下精选书目（共100本）供参考：\n\n${sampleBooks}\n\n[...更多书目已收录]\n\n## 当前模式：专家详解模式 🔍\n用户希望深入了解某本书，请提供专业、细致的讲解。\n\n## 讲解要求（必须包含以下5部分）\n1. **核心内容**：书籍的主题、故事梗概或核心论点（3-5句话）\n2. **价值解读**：这本书为什么值得读？能带来什么收获？\n3. **阅读建议**：\n   - 适合什么心情/场景下阅读\n   - 阅读时的思考角度\n   - 与课本知识或现实生活的联系\n4. **金句摘录**：引用书中1-2句经典语句\n5. **延伸阅读**：推荐1-2本相关主题的书籍\n\n## 对话风格\n- 语气专业、有深度，像一位博学的学长/学姐\n- 结构清晰，使用小标题和分段\n- 适当使用emoji增加亲和力`;
+  } else {
+    // 简洁模式：快速推荐
+    return `你是"都昌一中图书馆"的智能推荐助手BookBot。图书馆馆藏12,680本图书，系统收录了以下精选书目（共100本）供参考：\n\n${sampleBooks}\n\n[...更多书目已收录]\n\n## 当前模式：简洁推荐模式 ⚡\n用户需要快速获得推荐，请简洁有料地回应。\n\n## 推荐原则\n1. **精准匹配**：根据用户需求推荐1-3本最合适的书\n2. **优先馆藏**：优先推荐系统已收录的书籍，标注(馆内藏)\n3. **简洁有料**：每本书用1-2句话说明核心亮点，不要长篇大论\n4. **直击痛点**：说清楚这本书能解决用户的什么问题\n\n## 回复格式示例\n"推荐你读《xxx》(馆内藏)：一句话说明这本书的核心价值。适合xxx的你。"\n\n## 对话风格\n- 温暖、亲切、略带活泼\n- 像一位懂书的学长/学姐\n- 简洁有力，不啰嗦\n- 适当使用emoji增加亲和力`;
+  }
+}
+
+const chatHistory = [];
+
+async function callDeepSeek(userMessage) {
+  const apiUrl = `${DEEPSEEK_API_BASE}/v1/chat/completions`;
+  // 检测是否为专家模式（详细讲解）
+  const detailedMode = isExpertMode(userMessage);
+  // 维护对话历史（最多保留8轮）
+  chatHistory.push({ role: 'user', content: userMessage });
+  if (chatHistory.length > 16) chatHistory.splice(0, 2);
+
+  const messages = [
+    { role: 'system', content: buildBookContext(detailedMode) },
+    ...chatHistory
+  ];
+
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+    },
+    body: JSON.stringify({
+      model: 'deepseek-chat',
+      messages,
+      stream: true,
+      max_tokens: detailedMode ? 2000 : 800,
+      temperature: 0.7
+    })
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}));
+    throw new Error(errData?.error?.message || `HTTP ${response.status}`);
+  }
+
+  return response;
+}
+
+// 在聊天区新增一条流式 bot 消息，返回 bubble 元素（不用 id，直接返回 DOM 引用）
+function addStreamingBotMessage() {
+  const chatArea = document.getElementById('chatArea');
+  const now = new Date();
+  const time = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const msgDiv = document.createElement('div');
+  msgDiv.className = 'message bot';
+
+  // 先构建结构，再获取 bubble 的直接引用，避免重复 id 导致的选择错误
+  const contentDiv = document.createElement('div');
+  contentDiv.className = 'msg-content';
+
+  const senderDiv = document.createElement('div');
+  senderDiv.className = 'msg-sender';
+  senderDiv.innerHTML = `BookBot · ${time} <span class="ai-badge">✦ AI</span>`;
+
+  const bubbleDiv = document.createElement('div');
+  bubbleDiv.className = 'msg-bubble';
+  const cursor = document.createElement('span');
+  cursor.className = 'stream-cursor';
+  bubbleDiv.appendChild(cursor);
+
+  const avatarDiv = document.createElement('div');
+  avatarDiv.className = 'msg-avatar';
+  avatarDiv.textContent = '📚';
+
+  contentDiv.appendChild(senderDiv);
+  contentDiv.appendChild(bubbleDiv);
+  msgDiv.appendChild(avatarDiv);
+  msgDiv.appendChild(contentDiv);
+
+  chatArea.appendChild(msgDiv);
+  chatArea.scrollTop = chatArea.scrollHeight;
+  return bubbleDiv; // 直接返回引用，不依赖 getElementById
+}
+
+async function handleDeepSeekReply(userText) {
+  const bubble = addStreamingBotMessage();
+  let fullText = '';
+
+  try {
+    const response = await callDeepSeek(userText);
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // 保留不完整行
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (data === '[DONE]') break;
+        try {
+          const json = JSON.parse(data);
+          const delta = json.choices?.[0]?.delta?.content || '';
+          if (delta) {
+            fullText += delta;
+            // 将 markdown 粗体和换行转为 HTML
+            bubble.innerHTML = formatText(fullText) + '<span class="stream-cursor"></span>';
+            document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
+          }
+        } catch {}
+      }
+    }
+
+    // 处理 buffer 中可能残留的最后一行
+    if (buffer.startsWith('data: ')) {
+      const data = buffer.slice(6).trim();
+      if (data && data !== '[DONE]') {
+        try {
+          const json = JSON.parse(data);
+          const delta = json.choices?.[0]?.delta?.content || '';
+          if (delta) fullText += delta;
+        } catch {}
+      }
+    }
+    // 最终移除光标
+    if (!fullText.trim()) {
+      // 流式结束但内容为空，降级到本地推荐
+      const local = processMessage(userText);
+      bubble.innerHTML = formatText(local.content || '抱歉，AI 未能返回内容，请稍后再试。');
+      if (local.type === 'books' && local.books?.length) {
+        bubble.innerHTML += renderBooks(local.books);
+      }
+      return;
+    }
+    bubble.innerHTML = formatText(fullText);
+    // 把 AI 回复也加入历史
+    chatHistory.push({ role: 'assistant', content: fullText });
+
+    // 如果 AI 提到书名，尝试附上书卡
+    const mentionedBooks = findMentionedBooks(fullText);
+    if (mentionedBooks.length > 0) {
+      bubble.innerHTML += renderBooks(mentionedBooks);
+    }
+
+  } catch (err) {
+    const local = processMessage(userText);
+    bubble.innerHTML = `⚠️ AI 回复失败（${err.message}），已切换到本地推荐：<br><br>` + formatText(local.content || '');
+    // 回退本地推荐
+    if (local.type === 'books' && local.books?.length) {
+      bubble.innerHTML += renderBooks(local.books);
+    }
+  }
+}
+
+function formatText(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/`(.*?)`/g, '<code style="background:#f1f5f9;padding:1px 5px;border-radius:4px;font-family:monospace">$1</code>')
+    .replace(/\n/g, '<br>');
+}
+
+// 在 AI 回复文本中寻找匹配的书名
+function findMentionedBooks(text) {
+  return ALL_BOOKS.filter(b => text.includes(b.title)).slice(0, 5);
+}
+
+// ============================================================
+// UI 操作
+// ============================================================
+let isTyping = false;
+
+function getCategoryColor(category) {
+  const colors = {
+    "自然科学": "#dbeafe",
+    "文学小说": "#fef3c7",
+    "历史人文": "#d1fae5",
+    "科技编程": "#ede9fe",
+    "励志成长": "#fee2e2",
+    "艺术设计": "#fce7f3",
+    "国学经典": "#fef9c3",
+    "心理学": "#e0e7ff",
+  };
+  return colors[category] || "#f1f5f9";
+}
+
+function getCategoryTextColor(category) {
+  const colors = {
+    "自然科学": "#1d4ed8",
+    "文学小说": "#92400e",
+    "历史人文": "#065f46",
+    "科技编程": "#5b21b6",
+    "励志成长": "#991b1b",
+    "艺术设计": "#9d174d",
+    "国学经典": "#78350f",
+    "心理学": "#3730a3",
+  };
+  return colors[category] || "#475569";
+}
+
+function renderBooks(books) {
+  return `<div class="book-cards">` +
+    books.map(b => `
+      <div class="book-card" onclick="showBookDetail(${b.id})">
+        <div class="book-cover" style="background:${b.color}">${b.emoji}</div>
+        <div class="book-title">${b.title}</div>
+        <div class="book-author">${b.author}</div>
+        <div class="book-tags">
+          ${b.tags.map(t => `<span class="book-tag" style="background:${b.color};color:${getCategoryTextColor(b.category)}">${t}</span>`).join('')}
+        </div>
+        <div class="book-rating">${'⭐'.repeat(Math.floor(b.rating))} ${b.rating}</div>
+      </div>
+    `).join('') +
+    `</div>`;
+}
+
+function addMessage(sender, content, books = null) {
+  const chatArea = document.getElementById('chatArea');
+  const now = new Date();
+  const time = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+  const msgDiv = document.createElement('div');
+  msgDiv.className = `message ${sender}`;
+
+  let booksHtml = books ? renderBooks(books) : '';
+
+  if (sender === 'bot') {
+    msgDiv.innerHTML = `
+      <div class="msg-avatar">📚</div>
+      <div class="msg-content">
+        <div class="msg-sender">BookBot · ${time}</div>
+        <div class="msg-bubble">
+          <div>${content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>')}</div>
+          ${booksHtml}
+        </div>
+      </div>`;
+  } else {
+    msgDiv.innerHTML = `
+      <div class="msg-avatar">👤</div>
+      <div class="msg-content">
+        <div class="msg-sender" style="text-align:right">你 · ${time}</div>
+        <div class="msg-bubble">${content}</div>
+      </div>`;
+  }
+
+  chatArea.appendChild(msgDiv);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function showTyping() {
+  const chatArea = document.getElementById('chatArea');
+  const typingDiv = document.createElement('div');
+  typingDiv.className = 'message bot';
+  typingDiv.id = 'typing-indicator';
+  typingDiv.innerHTML = `
+    <div class="msg-avatar">📚</div>
+    <div class="msg-content">
+      <div class="msg-sender">BookBot 正在思考...</div>
+      <div class="typing-indicator">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
+    </div>`;
+  chatArea.appendChild(typingDiv);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function removeTyping() {
+  const el = document.getElementById('typing-indicator');
+  if (el) el.remove();
+}
+
+async function handleSend() {
+  const input = document.getElementById('inputField');
+  const text = input.value.trim();
+  if (!text || isTyping) return;
+
+  addMessage('user', text);
+  input.value = '';
+  input.style.height = 'auto';
+
+  isTyping = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  if (DEEPSEEK_API_KEY) {
+    // -------- DeepSeek AI 模式 --------
+    try {
+      await handleDeepSeekReply(text);
+    } catch (e) {
+      // 最外层兜底
+      const local = processMessage(text);
+      if (local.type === 'books') {
+        addMessage('bot', local.content, local.books);
+      } else {
+        addMessage('bot', local.content);
+      }
+    }
+  } else {
+    // -------- 本地关键词匹配模式 --------
+    showTyping();
+    await new Promise(r => setTimeout(r, 600 + Math.random() * 800));
+    removeTyping();
+    const result = processMessage(text);
+    if (result.type === 'books') {
+      addMessage('bot', result.content, result.books);
+    } else {
+      addMessage('bot', result.content);
+    }
+  }
+
+  isTyping = false;
+  document.getElementById('sendBtn').disabled = false;
+}
+
+function sendMsg(text) {
+  document.getElementById('inputField').value = text;
+  handleSend();
+}
+
+function fillInput(text) {
+  const input = document.getElementById('inputField');
+  input.value = text;
+  input.focus();
+  autoResize(input);
+}
+
+function handleKeyDown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    handleSend();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function clearChat() {
+  const chatArea = document.getElementById('chatArea');
+  chatArea.innerHTML = '';
+  chatHistory.length = 0;
+  addMessage('bot', '对话已清空！有什么我可以帮你的吗？😊');
+}
+
+// 初始化时更新 API 状态并检查首次使用引导
+document.addEventListener('DOMContentLoaded', () => {
+  updateApiStatusBadge();
+  checkFirstTimeSetup();
+});
+
+// ============================================================
+// 书籍详情弹窗
+// ============================================================
+function showBookDetail(bookId) {
+  const book = ALL_BOOKS.find(b => b.id === bookId);
+  if (!book) return;
+
+  const modal = document.getElementById('bookModal');
+  const content = document.getElementById('modalContent');
+
+  content.innerHTML = `
+    <h3 style="font-size:18px;font-weight:700;padding-right:40px">${book.title}</h3>
+    <div class="modal-cover" style="background:${book.color}">${book.emoji}</div>
+    <div class="modal-author">✍️ ${book.author} · ${book.category}</div>
+    <div class="modal-desc">${book.desc}</div>
+    <div class="modal-meta">
+      <div class="modal-meta-item">
+        <div class="val">${book.rating}</div>
+        <div class="lbl">评分</div>
+      </div>
+      <div class="modal-meta-item">
+        <div class="val">${book.pages}</div>
+        <div class="lbl">页数</div>
+      </div>
+      <div class="modal-meta-item">
+        <div class="val">${Math.abs(book.year)}</div>
+        <div class="lbl">${book.year < 0 ? '公元前' : '出版年'}</div>
+      </div>
+    </div>
+    <div style="margin-bottom:12px">
+      ${book.tags.map(t => `<span style="display:inline-block;margin:3px;padding:4px 10px;border-radius:20px;font-size:12px;background:${book.color};color:#374151">${t}</span>`).join('')}
+    </div>
+    <button class="modal-btn" onclick="closeModal();sendMsg('告诉我更多关于《${book.title}》的信息')">
+      💬 和我聊聊这本书
+    </button>
+  `;
+
+  document.getElementById('modalOverlay').style.display = 'flex';
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modalOverlay')) {
+    document.getElementById('modalOverlay').style.display = 'none';
+  }
+}
+
+// ESC 关闭弹窗
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal({target: document.getElementById('modalOverlay')});
+});
+</script>
+</body>
+</html>
