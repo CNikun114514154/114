@@ -582,6 +582,7 @@
       flex-wrap: wrap;
       gap: 12px;
       margin-top: 10px;
+      justify-content: center;
     }
 
     .book-card {
@@ -1206,6 +1207,28 @@
       border-color: var(--border-gold);
       color: var(--primary-light);
     }
+    
+    /* 模型配置区域 */
+    .model-config {
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    
+    /* 模型配置切换动画 */
+    .model-config[style*="display: none"] {
+      display: block !important;
+      opacity: 0;
+      transform: translateY(-10px);
+      pointer-events: none;
+      height: 0;
+      overflow: hidden;
+    }
+    
+    .model-config[style*="display: block"] {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: all;
+      height: auto;
+    }
 
     .api-status {
       display: inline-flex;
@@ -1272,6 +1295,347 @@
     .cat-tech { background: rgba(167,139,250,0.1); color: #a78bfa; border: 1px solid rgba(167,139,250,0.2); }
     .cat-default { background: rgba(201,169,110,0.1); color: var(--primary); border: 1px solid var(--border-gold); }
 
+    /* ====== 生日书籍查询弹窗 ====== */
+    .birthday-modal {
+      background: var(--bg2);
+      border: 1px solid var(--border-gold);
+      border-radius: 22px;
+      max-width: 420px;
+      width: 92%;
+      box-shadow: var(--shadow-deep), var(--shadow-gold);
+      animation: slideUp 0.3s cubic-bezier(0.4,0,0.2,1);
+      position: relative;
+    }
+
+    .birthday-modal::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--primary), transparent);
+      border-radius: 22px 22px 0 0;
+    }
+
+    .birthday-header {
+      padding: 28px 28px 0;
+      position: relative;
+      overflow: visible;
+    }
+
+    /* 文学生日弹窗关闭按钮 - 绝对定位确保可点击 */
+    .birthday-close-btn {
+      position: absolute !important;
+      top: 16px;
+      right: 16px;
+      float: none !important;
+      z-index: 10;
+    }
+
+    .birthday-title {
+      font-size: 18px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, var(--primary-light), var(--primary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .birthday-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+
+    .birthday-body { padding: 24px 28px 28px; }
+
+    /* 滚轮选择器容器 */
+    .wheel-picker {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      justify-content: center;
+      margin: 8px 0 20px;
+    }
+
+    .wheel-col {
+      position: relative;
+      width: 90px;
+      height: 180px;
+      overflow: hidden;
+      border-radius: 16px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+    }
+
+    .wheel-col:focus-within {
+      border-color: var(--border-gold);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    /* 上下渐隐遮罩 */
+    .wheel-col::before,
+    .wheel-col::after {
+      content: '';
+      position: absolute;
+      left: 0; right: 0;
+      height: 60px;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .wheel-col::before {
+      top: 0;
+      background: linear-gradient(180deg, var(--bg3) 10%, transparent);
+    }
+    .wheel-col::after {
+      bottom: 0;
+      background: linear-gradient(0deg, var(--bg3) 10%, transparent);
+    }
+
+    /* 选中行指示线 */
+    .wheel-highlight {
+      position: absolute;
+      left: 6px; right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 36px;
+      border-radius: 10px;
+      background: rgba(201,169,110,0.08);
+      border: 1px solid var(--border-gold);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .wheel-track {
+      position: relative;
+      z-index: 1;
+      transition: transform 0.35s cubic-bezier(0.25, 0.1, 0.25, 1);
+      /* padding由JS动态设置，确保与item高度匹配 */
+    }
+
+    .wheel-item {
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: color 0.2s, transform 0.2s;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .wheel-item.selected {
+      color: var(--primary-light);
+      font-weight: 700;
+      font-size: 17px;
+      transform: scale(1.05);
+    }
+
+    .wheel-item.near {
+      color: var(--text-muted);
+    }
+
+    .wheel-separator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--primary);
+      width: 20px;
+      flex-shrink: 0;
+    }
+
+    .birthday-query-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #0d1117;
+      border: none;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.25s;
+      letter-spacing: 0.03em;
+      box-shadow: 0 4px 16px rgba(201,169,110,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .birthday-query-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(201,169,110,0.4);
+    }
+    .birthday-query-btn:active { transform: scale(0.98); }
+    .birthday-query-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* 结果展示区域 */
+    .birthday-result {
+      display: none;
+      margin-top: 20px;
+      max-width: 100%;
+    }
+
+    .birthday-result.visible { display: block; }
+
+    .birthday-result-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 12px;
+      letter-spacing: 0.04em;
+    }
+
+    .birthday-result-label .tag {
+      padding: 3px 10px;
+      background: rgba(201,169,110,0.12);
+      border: 1px solid var(--border-gold);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .birthday-book-item {
+      display: flex;
+      gap: 14px;
+      padding: 14px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-bottom: 10px;
+      transition: all 0.25s;
+      cursor: default;
+    }
+
+    .birthday-book-item:hover {
+      border-color: var(--border-gold);
+      background: rgba(201,169,110,0.04);
+      transform: translateX(3px);
+    }
+
+    .birthday-book-cover {
+      width: 52px;
+      height: 70px;
+      border-radius: 8px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+    }
+
+    .birthday-book-info { flex: 1; min-width: 0; }
+
+    .birthday-book-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+      line-height: 1.4;
+    }
+
+    .birthday-book-author {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .birthday-book-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .birthday-book-date {
+      font-size: 11px;
+      padding: 2px 8px;
+      background: rgba(201,169,110,0.1);
+      border: 1px solid rgba(201,169,110,0.2);
+      border-radius: 20px;
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .birthday-book-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-top: 6px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .birthday-no-result {
+      text-align: center;
+      padding: 20px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .birthday-no-result .emoji {
+      font-size: 36px;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    /* 可拖拽的侧边条 */
+    .scrollbar-handle {
+      position: fixed;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 8px;
+      height: 100px;
+      background: var(--border-gold);
+      border-radius: 4px;
+      cursor: grab;
+      z-index: 1000;
+      opacity: 0.6;
+      transition: opacity 0.3s, width 0.2s, height 0.2s;
+      user-select: none;
+      touch-action: none;
+      border: 1px solid rgba(201,169,110,0.3);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    
+    .scrollbar-handle:hover {
+      opacity: 0.8;
+      width: 10px;
+    }
+    
+    .scrollbar-handle:active,
+    .scrollbar-handle.dragging {
+      cursor: grabbing;
+      opacity: 1;
+      width: 10px;
+      background: var(--primary);
+      box-shadow: 0 0 15px var(--primary-glow);
+    }
+    
+    .scrollbar-handle.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
     /* 响应式 */
     @media (max-width: 768px) {
       .sidebar { display: none; }
@@ -1279,6 +1643,25 @@
       .book-card { width: calc(50% - 6px); }
       .welcome-features { grid-template-columns: 1fr; }
       .topbar { padding: 12px 16px; }
+      .wheel-col { width: 76px; height: 150px; }
+      .wheel-item { height: 30px; font-size: 14px; }
+      .wheel-highlight { height: 30px; }
+      
+      /* 移动端侧边条调整 */
+      .scrollbar-handle {
+        width: 6px;
+        height: 80px;
+        right: 12px;
+      }
+      .scrollbar-handle:hover {
+        width: 7px;
+      }
+      .scrollbar-handle:active,
+      .scrollbar-handle.dragging {
+        width: 7px;
+      }
+      .birthday-header { padding: 20px 20px 0; }
+      .birthday-body { padding: 16px 20px 20px; }
     }
 
     /* ============================================================
@@ -1861,6 +2244,7 @@
     </div>
     <div class="topbar-actions">
       <button class="topbar-btn" onclick="openSettings()">⚙️ AI 设置</button>
+      <button class="topbar-btn" onclick="openBirthday()">🎂 文学生日</button>
       <span id="apiStatusBadge" class="api-status disconnected">● 本地模式</span>
       <button class="topbar-btn" onclick="clearChat()">🗑️ 清空</button>
       <button class="topbar-btn" onclick="sendMsg('帮我随机推荐一本书')">🎲 随机</button>
@@ -1930,38 +2314,180 @@
   </div>
 </div>
 
-<!-- DeepSeek 设置弹窗 -->
+<!-- AI 设置弹窗 -->
 <div class="modal-overlay" id="settingsOverlay" style="display:none" onclick="closeSettings(event)">
   <div class="settings-modal" onclick="event.stopPropagation()">
     <button class="modal-close" onclick="closeSettings()" style="float:right">✕</button>
-    <div class="settings-title">⚙️ DeepSeek AI 设置</div>
+    <div class="settings-title">⚙️ AI 模型设置</div>
     <p class="settings-desc">
-      接入 DeepSeek 大模型后，BookBot 将拥有真正的智能对话能力，能理解复杂问题并给出个性化推荐和书评。
+      接入大语言模型后，BookBot 将拥有真正的智能对话能力，能理解复杂问题并给出个性化推荐和书评。
     </p>
-    <label class="settings-label">🔑 DeepSeek API Key</label>
-    <input
-      class="settings-input"
-      id="apiKeyInput"
-      type="password"
-      placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-    />
-    <div class="settings-hint">
-      前往 <a href="https://platform.deepseek.com/api_keys" target="_blank">platform.deepseek.com</a> 获取免费 API Key（新用户赠送额度）
+    
+    <!-- 模型选择 -->
+    <label class="settings-label">🤖 选择模型</label>
+    <select class="settings-input" id="modelSelect" onchange="onModelChange()" style="cursor:pointer">
+      <option value="deepseek">DeepSeek（推荐）</option>
+      <option value="openai">OpenAI (GPT-4/3.5)</option>
+      <option value="claude">Anthropic Claude</option>
+      <option value="qwen">通义千问 (阿里云)</option>
+      <option value="glm">智谱 GLM</option>
+      <option value="moonshot">Moonshot (Kimi)</option>
+      <option value="custom">自定义 API</option>
+    </select>
+    
+    <!-- DeepSeek 配置（默认显示） -->
+    <div id="deepseekConfig" class="model-config">
+      <label class="settings-label">🔑 DeepSeek API Key</label>
+      <input class="settings-input" id="deepseekKey" type="password" placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
+      <div class="settings-hint">前往 <a href="https://platform.deepseek.com/api_keys" target="_blank">platform.deepseek.com</a> 获取免费 API Key（新用户赠送额度）</div>
+      <label class="settings-label">🧠 模型版本</label>
+      <select class="settings-input" id="deepseekModel" style="cursor:pointer">
+        <option value="deepseek-chat">DeepSeek Chat（经典版）</option>
+        <option value="deepseek-v3.2">DeepSeek V3.2（最新版）</option>
+        <option value="deepseek-v3.1">DeepSeek V3.1</option>
+        <option value="deepseek-r1">DeepSeek R1（推理版）</option>
+      </select>
+      <label class="settings-label">🌐 API 地址（可选）</label>
+      <input class="settings-input" id="deepseekBase" type="text" placeholder="https://api.deepseek.com" />
+      <div class="settings-hint">如使用中转服务可修改此地址，留空则使用官方接口</div>
     </div>
-    <label class="settings-label">🌐 API 地址（可选，默认官方）</label>
-    <input
-      class="settings-input"
-      id="apiBaseInput"
-      type="text"
-      placeholder="https://api.deepseek.com"
-      style="margin-bottom:6px"
-    />
-    <div class="settings-hint" style="margin-bottom:16px">如使用中转服务可修改此地址，留空则使用官方接口</div>
+    
+    <!-- OpenAI 配置 -->
+    <div id="openaiConfig" class="model-config" style="display:none">
+      <label class="settings-label">🔑 OpenAI API Key</label>
+      <input class="settings-input" id="openaiKey" type="password" placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
+      <div class="settings-hint">前往 <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a> 获取 API Key</div>
+      <label class="settings-label">🧠 模型版本</label>
+      <select class="settings-input" id="openaiModel" style="cursor:pointer">
+        <option value="gpt-4o">GPT-4o（最新最强）</option>
+        <option value="gpt-4-turbo">GPT-4 Turbo</option>
+        <option value="gpt-3.5-turbo">GPT-3.5 Turbo（快速）</option>
+      </select>
+      <label class="settings-label">🌐 API 地址（可选）</label>
+      <input class="settings-input" id="openaiBase" type="text" placeholder="https://api.openai.com" />
+      <div class="settings-hint">如使用代理或中转服务可修改此地址</div>
+    </div>
+    
+    <!-- Claude 配置 -->
+    <div id="claudeConfig" class="model-config" style="display:none">
+      <label class="settings-label">🔑 Anthropic API Key</label>
+      <input class="settings-input" id="claudeKey" type="password" placeholder="sk-ant-xxxxxxxxxxxxxxxx" />
+      <div class="settings-hint">前往 <a href="https://console.anthropic.com/" target="_blank">console.anthropic.com</a> 获取 API Key</div>
+      <label class="settings-label">🧠 模型版本</label>
+      <select class="settings-input" id="claudeModel" style="cursor:pointer">
+        <option value="claude-sonnet-4-20250514">Claude Sonnet 4（推荐）</option>
+        <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+        <option value="claude-3-opus-20240229">Claude 3 Opus（最强）</option>
+        <option value="claude-3-haiku-20240307">Claude 3 Haiku（快速）</option>
+      </select>
+      <label class="settings-label">🌐 API 地址（可选）</label>
+      <input class="settings-input" id="claudeBase" type="text" placeholder="https://api.anthropic.com" />
+      <div class="settings-hint">如使用中转服务可修改此地址，留空则使用官方接口</div>
+    </div>
+    
+    <!-- 通义千问 配置 -->
+    <div id="qwenConfig" class="model-config" style="display:none">
+      <label class="settings-label">🔑 阿里云 API Key</label>
+      <input class="settings-input" id="qwenKey" type="password" placeholder="sk-xxxxxxxxxxxxxxxx" />
+      <div class="settings-hint">前往 <a href="https://dashscope.console.aliyun.com/" target="_blank">阿里云控制台</a> 获取 API Key</div>
+      <label class="settings-label">🧠 模型版本</label>
+      <select class="settings-input" id="qwenModel" style="cursor:pointer">
+        <option value="qwen-turbo">通义千问-Turbo（快速）</option>
+        <option value="qwen-plus">通义千问-Plus（推荐）</option>
+        <option value="qwen-max">通义千问-Max（最强）</option>
+      </select>
+      <label class="settings-label">🌐 API 地址（可选）</label>
+      <input class="settings-input" id="qwenBase" type="text" placeholder="https://dashscope.aliyuncs.com" />
+      <div class="settings-hint">如使用中转服务可修改此地址，留空则使用官方接口</div>
+    </div>
+    
+    <!-- 智谱GLM 配置 -->
+    <div id="glmConfig" class="model-config" style="display:none">
+      <label class="settings-label">🔑 智谱 API Key</label>
+      <input class="settings-input" id="glmKey" type="password" placeholder="xxxxxxxxxxxxxxxx.xxxxxxxxxxxxxxxx" />
+      <div class="settings-hint">前往 <a href="https://open.bigmodel.cn/" target="_blank">open.bigmodel.cn</a> 获取 API Key</div>
+      <label class="settings-label">🧠 模型版本</label>
+      <select class="settings-input" id="glmModel" style="cursor:pointer">
+        <option value="glm-4-flash">GLM-4-Flash（免费快速）</option>
+        <option value="glm-4-air">GLM-4-Air（推荐）</option>
+        <option value="glm-4-plus">GLM-4-Plus（最强）</option>
+      </select>
+      <label class="settings-label">🌐 API 地址（可选）</label>
+      <input class="settings-input" id="glmBase" type="text" placeholder="https://open.bigmodel.cn" />
+      <div class="settings-hint">如使用中转服务可修改此地址，留空则使用官方接口</div>
+    </div>
+    
+    <!-- Moonshot 配置 -->
+    <div id="moonshotConfig" class="model-config" style="display:none">
+      <label class="settings-label">🔑 Moonshot API Key</label>
+      <input class="settings-input" id="moonshotKey" type="password" placeholder="sk-xxxxxxxxxxxxxxxx" />
+      <div class="settings-hint">前往 <a href="https://platform.moonshot.cn/" target="_blank">platform.moonshot.cn</a> 获取 API Key</div>
+      <label class="settings-label">🧠 模型版本</label>
+      <select class="settings-input" id="moonshotModel" style="cursor:pointer">
+        <option value="moonshot-v1-8k">Moonshot V1 8K</option>
+        <option value="moonshot-v1-32k">Moonshot V1 32K（长文本）</option>
+        <option value="moonshot-v1-128k">Moonshot V1 128K（超长文本）</option>
+      </select>
+      <label class="settings-label">🌐 API 地址（可选）</label>
+      <input class="settings-input" id="moonshotBase" type="text" placeholder="https://api.moonshot.cn" />
+      <div class="settings-hint">如使用中转服务可修改此地址，留空则使用官方接口</div>
+    </div>
+    
+    <!-- 自定义 API 配置 -->
+    <div id="customConfig" class="model-config" style="display:none">
+      <label class="settings-label">🔑 API Key</label>
+      <input class="settings-input" id="customKey" type="password" placeholder="输入你的 API Key" />
+      <label class="settings-label">🌐 API 地址</label>
+      <input class="settings-input" id="customBase" type="text" placeholder="https://api.example.com/v1" />
+      <div class="settings-hint">请输入兼容 OpenAI 格式的 API 地址</div>
+      <label class="settings-label">🧠 模型名称</label>
+      <input class="settings-input" id="customModel" type="text" placeholder="例如：gpt-4, claude-3-sonnet" />
+    </div>
+    
     <div id="settingsTestResult" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px"></div>
     <div class="settings-row">
       <button class="settings-save-btn" onclick="saveSettings()">✅ 保存并连接</button>
       <button class="settings-cancel-btn" onclick="testConnection()">🔌 测试连接</button>
       <button class="settings-cancel-btn" onclick="clearApiKey()">🗑️ 清除</button>
+    </div>
+  </div>
+</div>
+
+<!-- 生日书籍查询弹窗 -->
+<div class="modal-overlay" id="birthdayOverlay" style="display:none" onclick="closeBirthday(event)">
+  <div class="birthday-modal" onclick="event.stopPropagation()">
+    <button class="modal-close birthday-close-btn" onclick="closeBirthday(event)">✕</button>
+    <div class="birthday-header">
+      <div class="birthday-title">🎂 文学生日</div>
+      <div class="birthday-subtitle">输入你的生日，发现那一天出版的好书</div>
+    </div>
+    <div class="birthday-body">
+      <!-- 滚轮选择器 -->
+      <div class="wheel-picker">
+        <!-- 年 -->
+        <div class="wheel-col" id="wheelYear" tabindex="0">
+          <div class="wheel-highlight"></div>
+          <div class="wheel-track" id="trackYear"></div>
+        </div>
+        <div class="wheel-separator">年</div>
+        <!-- 月 -->
+        <div class="wheel-col" id="wheelMonth" tabindex="0">
+          <div class="wheel-highlight"></div>
+          <div class="wheel-track" id="trackMonth"></div>
+        </div>
+        <div class="wheel-separator">月</div>
+        <!-- 日 -->
+        <div class="wheel-col" id="wheelDay" tabindex="0">
+          <div class="wheel-highlight"></div>
+          <div class="wheel-track" id="trackDay"></div>
+        </div>
+        <div class="wheel-separator">日</div>
+      </div>
+
+      <button class="birthday-query-btn" id="birthdayQueryBtn" onclick="queryBirthdayBooks()">🔍 查询我的文学生日</button>
+
+      <!-- 结果区域 -->
+      <div class="birthday-result" id="birthdayResult"></div>
     </div>
   </div>
 </div>
@@ -2273,29 +2799,108 @@ function processMessage(text) {
 // ============================================================
 // DeepSeek API 配置管理
 // ============================================================
-let DEEPSEEK_API_KEY = localStorage.getItem('ds_api_key') || '';
-let DEEPSEEK_API_BASE = localStorage.getItem('ds_api_base') || 'https://api.deepseek.com';
+// 为了向后兼容，保持原有变量名
+let DEEPSEEK_API_KEY = '';
+let DEEPSEEK_API_BASE = 'https://api.deepseek.com';
+
+// 初始加载配置（页面加载时执行）
+function initializeApiConfig() {
+  const savedModel = localStorage.getItem('selected_model') || 'deepseek';
+  
+  // 从localStorage加载当前选择的模型配置
+  let savedKey = localStorage.getItem(`${savedModel}_api_key`) || localStorage.getItem('ds_api_key') || '';
+  let savedBase = localStorage.getItem(`${savedModel}_api_base`) || localStorage.getItem('ds_api_base') || getDefaultBaseUrl(savedModel) || 'https://api.deepseek.com';
+  
+  // 如果没有当前模型的配置，检查是否有任何其他模型有配置
+  if (!savedKey) {
+    const models = ['deepseek', 'openai', 'claude', 'qwen', 'glm', 'moonshot', 'custom'];
+    for (const model of models) {
+      const testKey = localStorage.getItem(`${model}_api_key`);
+      if (testKey && testKey.length > 10 && !testKey.includes('●')) { // 确保是有效的key
+        savedKey = testKey;
+        savedBase = localStorage.getItem(`${model}_api_base`) || getDefaultBaseUrl(model);
+        // 自动切换到该模型
+        localStorage.setItem('selected_model', model);
+        console.log(`检测到${model}配置，自动切换模型`);
+        break;
+      }
+    }
+  }
+  
+  DEEPSEEK_API_KEY = savedKey;
+  DEEPSEEK_API_BASE = savedBase;
+  
+  // 加载所有配置到界面
+  loadModelConfig();
+  
+  // 更新顶部状态徽章
+  updateApiStatusBadge();
+}
+
+// 页面加载后初始化配置
+setTimeout(initializeApiConfig, 100);
 
 function updateApiStatusBadge() {
   const badge = document.getElementById('apiStatusBadge');
   if (!badge) return;
-  if (DEEPSEEK_API_KEY) {
+  
+  // 获取当前选择的模型
+  const modelSelect = document.getElementById('modelSelect');
+  const currentModel = modelSelect ? modelSelect.value : 'deepseek';
+  
+  // 获取当前模型的配置
+  const config = getCurrentModelConfig();
+  
+  // 检查是否有有效的API Key（不是掩码和长度足够）
+  if (config.key && config.key.length > 10 && !config.key.includes('●')) {
     badge.className = 'api-status connected';
     badge.textContent = '✦ AI 已接入';
   } else {
-    badge.className = 'api-status disconnected';
-    badge.textContent = '● 本地模式';
+    // 检查是否有任何其他模型配置
+    const models = ['deepseek', 'openai', 'claude', 'qwen', 'glm', 'moonshot', 'custom'];
+    let hasAnyConfig = false;
+    for (const model of models) {
+      const savedKey = localStorage.getItem(`${model}_api_key`);
+      if (savedKey && savedKey.length > 10 && !savedKey.includes('●')) {
+        hasAnyConfig = true;
+        break;
+      }
+    }
+    
+    if (hasAnyConfig) {
+      badge.className = 'api-status connected';
+      badge.textContent = '✦ AI 已配置';
+    } else {
+      badge.className = 'api-status disconnected';
+      badge.textContent = '● 本地模式';
+    }
   }
 }
 
 // 检查是否需要显示首次使用引导
 function checkFirstTimeSetup() {
-  if (!DEEPSEEK_API_KEY) {
+  // 检查是否有任何有效的API配置
+  const models = ['deepseek', 'openai', 'claude', 'qwen', 'glm', 'moonshot', 'custom'];
+  let hasValidConfig = false;
+  
+  for (const model of models) {
+    const savedKey = localStorage.getItem(`${model}_api_key`);
+    if (savedKey && savedKey.length > 10 && !savedKey.includes('●')) {
+      hasValidConfig = true;
+      break;
+    }
+  }
+  
+  if (!hasValidConfig) {
     // 延迟显示，等页面加载完成
     setTimeout(() => {
       showWelcomeGuide();
     }, 500);
   }
+  
+  // 更新文学生日按钮状态
+  const isAIAvailable = isAIReady();
+  updateBirthdayBtnState(isAIAvailable);
 }
 
 // 显示欢迎引导
@@ -2343,9 +2948,13 @@ function skipGuide() {
 
 function openSettings() {
   document.getElementById('settingsOverlay').style.display = 'flex';
-  document.getElementById('apiKeyInput').value = DEEPSEEK_API_KEY ? '●'.repeat(20) : '';
-  document.getElementById('apiBaseInput').value = DEEPSEEK_API_BASE !== 'https://api.deepseek.com' ? DEEPSEEK_API_BASE : '';
   document.getElementById('settingsTestResult').style.display = 'none';
+  
+  // 加载已保存的配置
+  loadModelConfig();
+  
+  // 初始化模型选择显示
+  onModelChange();
 }
 
 function closeSettings(e) {
@@ -2355,59 +2964,178 @@ function closeSettings(e) {
 }
 
 function saveSettings() {
-  const keyVal = document.getElementById('apiKeyInput').value.trim();
-  const baseVal = document.getElementById('apiBaseInput').value.trim();
-  // 如果是掩码（●），则不覆盖
-  if (keyVal && !keyVal.includes('●')) {
-    DEEPSEEK_API_KEY = keyVal;
-    localStorage.setItem('ds_api_key', keyVal);
-  }
-  DEEPSEEK_API_BASE = baseVal || 'https://api.deepseek.com';
-  localStorage.setItem('ds_api_base', DEEPSEEK_API_BASE);
-  updateApiStatusBadge();
-  document.getElementById('settingsOverlay').style.display = 'none';
-  if (DEEPSEEK_API_KEY) {
-    addMessage('bot', '✅ DeepSeek AI 已配置成功！现在我拥有了真正的智能对话能力，可以和你深度聊书啦～🎉');
+  if (saveModelConfig()) {
+    document.getElementById('settingsOverlay').style.display = 'none';
+    
+    // 获取当前模型信息
+    const modelSelect = document.getElementById('modelSelect');
+    const currentModel = modelSelect ? modelSelect.value : 'deepseek';
+    const modelName = modelSelect ? modelSelect.options[modelSelect.selectedIndex].text : 'DeepSeek';
+    
+    if (DEEPSEEK_API_KEY) {
+      addMessage('bot', `✅ ${modelName} AI 已配置成功！现在我拥有了真正的智能对话能力，可以和你深度聊书啦～🎉`);
+    } else {
+      addMessage('bot', '🔧 API 配置已保存，但未检测到有效的 API Key。如需使用 AI 功能，请确保输入了正确的 API Key。');
+    }
+    
+    // 更新API状态徽章
+    updateApiStatusBadge();
+    
+    // 更新文学生日按钮状态
+    const isAIAvailable = isAIReady();
+    updateBirthdayBtnState(isAIAvailable);
+  } else {
+    showTestResult('保存配置失败', false);
   }
 }
 
 function clearApiKey() {
+  const modelSelect = document.getElementById('modelSelect');
+  const currentModel = modelSelect ? modelSelect.value : 'deepseek';
+  
+  // 清除当前模型的localStorage
+  localStorage.removeItem(`${currentModel}_api_key`);
+  localStorage.removeItem(`${currentModel}_api_base`);
+  localStorage.removeItem(`${currentModel}_api_model`);
+  
+  // 重置全局变量
   DEEPSEEK_API_KEY = '';
-  DEEPSEEK_API_BASE = 'https://api.deepseek.com';
-  localStorage.removeItem('ds_api_key');
-  localStorage.removeItem('ds_api_base');
-  document.getElementById('apiKeyInput').value = '';
-  document.getElementById('apiBaseInput').value = '';
+  DEEPSEEK_API_BASE = getDefaultBaseUrl(currentModel);
+  
+  // 清空当前模型输入框
+  const keyInput = document.getElementById(`${currentModel}Key`);
+  const baseInput = document.getElementById(`${currentModel}Base`);
+  
+  if (keyInput) keyInput.value = '';
+  if (baseInput) baseInput.value = '';
+  
   updateApiStatusBadge();
-  showTestResult('已切换回本地推荐模式', false);
+  showTestResult(`已清除${currentModel}配置，切换回本地推荐模式`, false);
 }
 
 async function testConnection() {
-  const keyVal = document.getElementById('apiKeyInput').value.trim();
-  const baseVal = document.getElementById('apiBaseInput').value.trim();
-  const testKey = (keyVal && !keyVal.includes('●')) ? keyVal : DEEPSEEK_API_KEY;
-  const testBase = baseVal || 'https://api.deepseek.com';
+  const modelSelect = document.getElementById('modelSelect');
+  const currentModel = modelSelect ? modelSelect.value : 'deepseek';
+  const config = getCurrentModelConfig();
+  
+  // 优先从localStorage获取真实的API Key
+  let testKey = localStorage.getItem(`${currentModel}_api_key`) || '';
+  
+  // 如果localStorage中没有，再尝试从DOM获取（可能是新输入的）
   if (!testKey) {
-    showTestResult('请先输入 API Key', false);
+    testKey = config.key;
+    // 如果是掩码Key，则从localStorage获取实际Key（再次尝试）
+    if (isMaskedKey(testKey)) {
+      testKey = localStorage.getItem(`${currentModel}_api_key`) || '';
+    }
+  }
+  
+  let testBase = config.base || getDefaultBaseUrl(currentModel);
+  
+  if (!testKey) {
+    showTestResult('请先输入有效的 API Key', false);
     return;
   }
+  
+  if (!testBase) {
+    showTestResult('请输入有效的 API 地址', false);
+    return;
+  }
+  
   showTestResult('⏳ 连接测试中...', null);
+  
   try {
-    const res = await fetch(`${testBase}/v1/chat/completions`, {
+    let endpoint = '';
+    let requestBody = {};
+    let headers = {};
+    
+    // 根据不同模型提供商构造请求
+    switch(currentModel) {
+      case 'deepseek':
+      case 'openai':
+      case 'custom':
+        endpoint = `${testBase}/v1/chat/completions`;
+        headers = { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${testKey}` 
+        };
+        requestBody = {
+          model: config.model || 'deepseek-chat',
+          messages: [{ role: 'user', content: '回复"OK"' }],
+          max_tokens: 5,
+          stream: false
+        };
+        break;
+        
+      case 'claude':
+        endpoint = `${testBase}/v1/messages`;
+        headers = { 
+          'Content-Type': 'application/json', 
+          'x-api-key': testKey,
+          'anthropic-version': '2023-06-01'
+        };
+        requestBody = {
+          model: config.model || 'claude-3-haiku',
+          max_tokens: 5,
+          messages: [{ role: 'user', content: 'reply "OK"' }]
+        };
+        break;
+        
+      case 'qwen':
+        endpoint = `${testBase}/compatible-mode/v1/chat/completions`;
+        headers = { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${testKey}` 
+        };
+        requestBody = {
+          model: config.model || 'qwen-plus',
+          messages: [{ role: 'user', content: '回复"OK"' }],
+          max_tokens: 5,
+          stream: false
+        };
+        break;
+        
+      case 'glm':
+        endpoint = `${testBase}/v1/chat/completions`;
+        headers = { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${testKey}` 
+        };
+        requestBody = {
+          model: config.model || 'glm-4',
+          messages: [{ role: 'user', content: '回复"OK"' }],
+          max_tokens: 5,
+          stream: false
+        };
+        break;
+        
+      case 'moonshot':
+        endpoint = `${testBase}/v1/chat/completions`;
+        headers = { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${testKey}` 
+        };
+        requestBody = {
+          model: config.model || 'moonshot-v1-128k',
+          messages: [{ role: 'user', content: '回复"OK"' }],
+          max_tokens: 5,
+          stream: false
+        };
+        break;
+    }
+    
+    const res = await fetch(endpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${testKey}` },
-      body: JSON.stringify({
-        model: 'deepseek-chat',
-        messages: [{ role: 'user', content: '回复"OK"' }],
-        max_tokens: 5,
-        stream: false
-      })
+      headers: headers,
+      body: JSON.stringify(requestBody)
     });
+    
     if (res.ok) {
       showTestResult('✅ 连接成功！API Key 有效', true);
     } else {
       const err = await res.json().catch(() => ({}));
-      showTestResult(`❌ 连接失败：${err?.error?.message || res.status}`, false);
+      const errMsg = err?.error?.message || err?.message || res.statusText || `HTTP ${res.status}`;
+      showTestResult(`❌ 连接失败：${errMsg}`, false);
     }
   } catch (e) {
     showTestResult(`❌ 网络错误：${e.message}`, false);
@@ -2451,10 +3179,283 @@ function buildBookContext(isDetailed = false) {
   }
 }
 
+// ============================================================
+// 模型选择与配置管理
+// ============================================================
+
+// 获取当前模型对应的Key和Base
+function getCurrentModelConfig() {
+  const modelSelect = document.getElementById('modelSelect');
+  const currentModel = modelSelect ? modelSelect.value : 'deepseek';
+  
+  switch(currentModel) {
+    case 'deepseek': 
+      return {
+        key: document.getElementById('deepseekKey')?.value?.trim() || '',
+        base: document.getElementById('deepseekBase')?.value?.trim() || 'https://api.deepseek.com',
+        model: document.getElementById('deepseekModel')?.value || 'deepseek-chat'
+      };
+    case 'openai':
+      return {
+        key: document.getElementById('openaiKey')?.value?.trim() || '',
+        base: document.getElementById('openaiBase')?.value?.trim() || 'https://api.openai.com',
+        model: document.getElementById('openaiModel')?.value || 'gpt-3.5-turbo'
+      };
+    case 'claude':
+      return {
+        key: document.getElementById('claudeKey')?.value?.trim() || '',
+        base: document.getElementById('claudeBase')?.value?.trim() || 'https://api.anthropic.com',
+        model: document.getElementById('claudeModel')?.value || 'claude-3-haiku'
+      };
+    case 'qwen':
+      return {
+        key: document.getElementById('qwenKey')?.value?.trim() || '',
+        base: document.getElementById('qwenBase')?.value?.trim() || 'https://dashscope.aliyuncs.com',
+        model: document.getElementById('qwenModel')?.value || 'qwen-plus'
+      };
+    case 'glm':
+      return {
+        key: document.getElementById('glmKey')?.value?.trim() || '',
+        base: document.getElementById('glmBase')?.value?.trim() || 'https://open.bigmodel.cn',
+        model: document.getElementById('glmModel')?.value || 'glm-4'
+      };
+    case 'moonshot':
+      return {
+        key: document.getElementById('moonshotKey')?.value?.trim() || '',
+        base: document.getElementById('moonshotBase')?.value?.trim() || 'https://api.moonshot.cn',
+        model: document.getElementById('moonshotModel')?.value || 'moonshot-v1-128k'
+      };
+    case 'custom':
+      return {
+        key: document.getElementById('customKey')?.value?.trim() || '',
+        base: document.getElementById('customBase')?.value?.trim() || '',
+        model: document.getElementById('customModel')?.value?.trim() || ''
+      };
+    default:
+      return {
+        key: '',
+        base: currentModel === 'deepseek' ? 'https://api.deepseek.com' : '',
+        model: ''
+      };
+  }
+}
+
+// 检查是否为掩码Key
+function isMaskedKey(key) {
+  return key && key.includes('●');
+}
+
+// 隐藏所有模型配置，显示指定模型配置
+function onModelChange() {
+  const modelSelect = document.getElementById('modelSelect');
+  const currentModel = modelSelect ? modelSelect.value : 'deepseek';
+  
+  // 隐藏所有配置区域
+  const configs = document.querySelectorAll('.model-config');
+  configs.forEach(config => config.style.display = 'none');
+  
+  // 显示当前模型的配置区域
+  const currentConfig = document.getElementById(currentModel + 'Config');
+  if (currentConfig) {
+    currentConfig.style.display = 'block';
+  }
+}
+
+// 保存当前模型配置到localStorage
+function saveModelConfig() {
+  const modelSelect = document.getElementById('modelSelect');
+  const currentModel = modelSelect ? modelSelect.value : 'deepseek';
+  const config = getCurrentModelConfig();
+  
+  // 如果没有输入新的Key（掩码或空），则使用已保存的
+  if (isMaskedKey(config.key) || !config.key) {
+    // 保留现有的Key
+    const savedKey = localStorage.getItem(`${currentModel}_api_key`);
+    if (savedKey) config.key = savedKey;
+  }
+  
+  if (config.key && !isMaskedKey(config.key)) {
+    localStorage.setItem(`${currentModel}_api_key`, config.key);
+  }
+  
+  if (config.base) {
+    localStorage.setItem(`${currentModel}_api_base`, config.base);
+  }
+  
+  if (config.model) {
+    localStorage.setItem(`${currentModel}_api_model`, config.model);
+  }
+  
+  // 保存当前选择的模型
+  localStorage.setItem('selected_model', currentModel);
+  
+  // 设置全局变量
+  DEEPSEEK_API_KEY = config.key;
+  DEEPSEEK_API_BASE = config.base;
+  
+  updateApiStatusBadge();
+  return true;
+}
+
+// 加载已保存的模型配置
+function loadModelConfig() {
+  // 加载选择的模型
+  const savedModel = localStorage.getItem('selected_model') || 'deepseek';
+  const modelSelect = document.getElementById('modelSelect');
+  if (modelSelect) {
+    modelSelect.value = savedModel;
+  }
+  
+  // 加载每个模型的配置
+  const models = ['deepseek', 'openai', 'claude', 'qwen', 'glm', 'moonshot', 'custom'];
+  let hasFoundValidKey = false;
+  
+  models.forEach(model => {
+    const savedKey = localStorage.getItem(`${model}_api_key`);
+    const savedBase = localStorage.getItem(`${model}_api_base`);
+    const savedModelVal = localStorage.getItem(`${model}_api_model`);
+    
+    const keyElement = document.getElementById(`${model}Key`);
+    const baseElement = document.getElementById(`${model}Base`);
+    const modelElement = document.getElementById(`${model}Model`);
+    
+    if (savedKey && keyElement) {
+      if (model === savedModel && (!hasFoundValidKey || savedKey.length > 10 && !savedKey.includes('●'))) {
+        DEEPSEEK_API_KEY = savedKey;
+        hasFoundValidKey = true;
+      }
+      keyElement.value = '●'.repeat(20);
+    }
+    
+    if (savedBase && baseElement) {
+      if (model === savedModel) {
+        DEEPSEEK_API_BASE = savedBase;
+      }
+      baseElement.value = savedBase !== getDefaultBaseUrl(model) ? savedBase : '';
+    } else if (baseElement) {
+      baseElement.value = '';
+    }
+    
+    if (savedModelVal && modelElement && modelElement.tagName === 'SELECT') {
+      modelElement.value = savedModelVal;
+    }
+  });
+  
+  // 如果没有找到当前模型的有效Key，尝试查找其他模型
+  if (!hasFoundValidKey) {
+    for (const model of models) {
+      const savedKey = localStorage.getItem(`${model}_api_key`);
+      if (savedKey && savedKey.length > 10 && !savedKey.includes('●')) {
+        DEEPSEEK_API_KEY = savedKey;
+        const savedBase = localStorage.getItem(`${model}_api_base`) || getDefaultBaseUrl(model);
+        DEEPSEEK_API_BASE = savedBase;
+        
+        // 自动切换到该模型
+        if (modelSelect && model !== savedModel) {
+          modelSelect.value = model;
+          localStorage.setItem('selected_model', model);
+        }
+        break;
+      }
+    }
+  }
+  
+  // 更新状态徽章
+  updateApiStatusBadge();
+}
+
+// 获取默认的API Base URL
+function getDefaultBaseUrl(model) {
+  switch(model) {
+    case 'deepseek': return 'https://api.deepseek.com';
+    case 'openai': return 'https://api.openai.com';
+    case 'claude': return 'https://api.anthropic.com';
+    case 'qwen': return 'https://dashscope.aliyuncs.com';
+    case 'glm': return 'https://open.bigmodel.cn';
+    case 'moonshot': return 'https://api.moonshot.cn';
+    default: return '';
+  }
+}
+
 const chatHistory = [];
 
-async function callDeepSeek(userMessage) {
-  const apiUrl = `${DEEPSEEK_API_BASE}/v1/chat/completions`;
+// 检查是否有可用的AI配置
+function hasAIConfiguration() {
+  // 首先检查全局变量
+  if (DEEPSEEK_API_KEY && DEEPSEEK_API_KEY.length > 10 && !DEEPSEEK_API_KEY.includes('●')) {
+    return true;
+  }
+  
+  // 检查localStorage中是否有任何有效的API Key
+  const models = ['deepseek', 'openai', 'claude', 'qwen', 'glm', 'moonshot', 'custom'];
+  for (const model of models) {
+    const savedKey = localStorage.getItem(`${model}_api_key`);
+    if (savedKey && savedKey.length > 10 && !savedKey.includes('●')) {
+      // 如果找到有效的Key但全局变量没有设置，自动更新它
+      if (!DEEPSEEK_API_KEY || DEEPSEEK_API_KEY.length <= 10 || DEEPSEEK_API_KEY.includes('●')) {
+        const savedBase = localStorage.getItem(`${model}_api_base`) || getDefaultBaseUrl(model);
+        DEEPSEEK_API_KEY = savedKey;
+        DEEPSEEK_API_BASE = savedBase;
+        
+        // 自动切换到该模型
+        const modelSelect = document.getElementById('modelSelect');
+        const currentModel = modelSelect ? modelSelect.value : 'deepseek';
+        if (modelSelect && model !== currentModel) {
+          modelSelect.value = model;
+          localStorage.setItem('selected_model', model);
+        }
+      }
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+// 通用的AI调用函数
+async function callAI(userMessage) {
+  // 获取当前选择的模型
+  const modelSelect = document.getElementById('modelSelect');
+  const currentModel = modelSelect ? modelSelect.value : 'deepseek';
+  
+  // 获取当前模型配置
+  const config = {
+    key: DEEPSEEK_API_KEY,
+    base: DEEPSEEK_API_BASE,
+    model: 'deepseek-chat' // 默认模型
+  };
+  
+  // 从localStorage获取当前模型的准确配置
+  const savedModel = localStorage.getItem('selected_model') || currentModel || 'deepseek';
+  const savedKey = localStorage.getItem(`${savedModel}_api_key`);
+  const savedBase = localStorage.getItem(`${savedModel}_api_base`);
+  const savedModelVal = localStorage.getItem(`${savedModel}_api_model`);
+  
+  if (savedKey && savedKey.length > 10 && !savedKey.includes('●')) {
+    config.key = savedKey;
+    config.base = savedBase || getDefaultBaseUrl(savedModel);
+    config.model = savedModelVal || 'deepseek-chat';
+    
+    // 更新全局变量和界面
+    DEEPSEEK_API_KEY = config.key;
+    DEEPSEEK_API_BASE = config.base;
+    if (modelSelect && modelSelect.value !== savedModel) {
+      modelSelect.value = savedModel;
+      localStorage.setItem('selected_model', savedModel);
+    }
+  } else {
+    // 如果没有保存的配置，尝试使用getCurrentModelConfig
+    const currentConfig = getCurrentModelConfig();
+    if (currentConfig && currentConfig.key && currentConfig.key.length > 10 && !currentConfig.key.includes('●')) {
+      config.key = currentConfig.key;
+      config.base = currentConfig.base || getDefaultBaseUrl(currentModel);
+      config.model = currentConfig.model || 'deepseek-chat';
+      
+      DEEPSEEK_API_KEY = config.key;
+      DEEPSEEK_API_BASE = config.base;
+    }
+  }
+  
   // 检测是否为专家模式（详细讲解）
   const detailedMode = isExpertMode(userMessage);
   // 维护对话历史（最多保留8轮）
@@ -2466,14 +3467,25 @@ async function callDeepSeek(userMessage) {
     ...chatHistory
   ];
 
+  // 构建API请求
+  const apiUrl = `${config.base}/v1/chat/completions`;
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${config.key}`
+  };
+
+  // Claude使用不同的头部格式
+  if (currentModel === 'claude' || savedModel === 'claude') {
+    headers['x-api-key'] = config.key;
+    headers['Authorization'] = undefined;
+    headers['anthropic-version'] = '2023-06-01';
+  }
+
   const response = await fetch(apiUrl, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
-    },
+    headers,
     body: JSON.stringify({
-      model: 'deepseek-chat',
+      model: config.model,
       messages,
       stream: true,
       max_tokens: detailedMode ? 2000 : 800,
@@ -2487,6 +3499,11 @@ async function callDeepSeek(userMessage) {
   }
 
   return response;
+}
+
+// 保持向后兼容性
+async function callDeepSeek(userMessage) {
+  return callAI(userMessage);
 }
 
 // 在聊天区新增一条流式 bot 消息，返回 bubble 元素（不用 id，直接返回 DOM 引用）
@@ -2530,7 +3547,7 @@ async function handleDeepSeekReply(userText) {
   let fullText = '';
 
   try {
-    const response = await callDeepSeek(userText);
+    const response = await callAI(userText);
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
@@ -2742,17 +3759,22 @@ async function handleSend() {
   isTyping = true;
   document.getElementById('sendBtn').disabled = true;
 
-  if (DEEPSEEK_API_KEY) {
-    // -------- DeepSeek AI 模式 --------
+  // 检查是否有可用的人工智能API配置
+  if (hasAIConfiguration()) {
+    // -------- AI 模式 --------
     try {
       await handleDeepSeekReply(text);
     } catch (e) {
-      // 最外层兜底
-      const local = processMessage(text);
-      if (local.type === 'books') {
-        addMessage('bot', local.content, local.books);
+      console.error('AI调用失败，降级到本地模式:', e);
+      // AI调用失败时降级到本地模式
+      showTyping();
+      await new Promise(r => setTimeout(r, 600 + Math.random() * 800));
+      removeTyping();
+      const result = processMessage(text);
+      if (result.type === 'books') {
+        addMessage('bot', result.content, result.books);
       } else {
-        addMessage('bot', local.content);
+        addMessage('bot', result.content);
       }
     }
   } else {
@@ -2809,59 +3831,159 @@ function clearChat() {
 
 // 初始化时更新 API 状态并检查首次使用引导
 document.addEventListener('DOMContentLoaded', () => {
-  updateApiStatusBadge();
-  checkFirstTimeSetup();
+  // 初始化API配置
+  initializeApiConfig();
+  
+  // 额外检查以确保配置正确加载
+  setTimeout(() => {
+    // 再次检查是否有有效的AI配置
+    if (!hasAIConfiguration()) {
+      // 显示欢迎引导
+      checkFirstTimeSetup();
+    } else {
+      console.log('AI配置已正确加载，隐藏引导');
+    }
+    
+    // 更新文学生日按钮状态
+    const isAIAvailable = isAIReady();
+    updateBirthdayBtnState(isAIAvailable);
+  }, 300);
 });
 
 // ============================================================
 // 书籍详情弹窗
 // ============================================================
-function showBookDetail(bookId) {
-  const book = ALL_BOOKS.find(b => b.id === bookId);
-  if (!book) return;
+function showBookDetail(bookId, bookName = '', bookAuthor = '', bookCountry = '', bookDesc = '') {
+  // 处理两种调用方式：
+  // 1. 通过bookId从ALL_BOOKS查找
+  // 2. 通过参数直接传递文学生日书籍信息
+  let book;
+  
+  if (typeof bookId === 'number' || typeof bookId === 'string' && /^\d+$/.test(bookId)) {
+    // 方式1：通过ID查找
+    book = ALL_BOOKS.find(b => b.id === parseInt(bookId));
+    if (!book) return;
+  } else {
+    // 方式2：使用传递的参数（文学生日书籍）
+    book = {
+      title: bookId || bookName, // 如果bookId是书名
+      author: bookAuthor,
+      country: bookCountry,
+      desc: bookDesc,
+      year: bookId.name ? bookId.y : 0, // 处理文学生日书籍对象
+      emoji: bookId.emoji || '📚',
+      tags: bookId.tags || ['经典文学']
+    };
+  }
 
   const modal = document.getElementById('bookModal');
   const content = document.getElementById('modalContent');
 
+  // 确定书籍信息
+  const title = book.title || book.name || '';
+  const author = book.author || '';
+  const category = book.country || book.category || '文学作品';
+  const desc = book.desc || book.description || '';
+  const year = book.year || 0;
+  const emoji = book.emoji || '📚';
+  
+  // 随机生成一个配色
+  const colors = ['#c9a96e', '#6b9cce', '#34d399', '#a78bfa'];
+  const color = book.color || colors[Math.floor(Math.random() * colors.length)];
+  
+  // 添加AI询问选项，如果AI已接入
+  const hasAI = isAIReady();
+  const aiButton = hasAI 
+    ? `<button class="modal-btn" onclick="closeModal();sendMsg('请详细介绍一下《${title}》这本书，和我谈谈它', true)">
+        💬 和我聊聊这本书
+      </button>`
+    : '';
+
   content.innerHTML = `
-    <h3 style="font-size:18px;font-weight:700;padding-right:40px">${book.title}</h3>
-    <div class="modal-cover" style="background:${book.color}">${book.emoji}</div>
-    <div class="modal-author">✍️ ${book.author} · ${book.category}</div>
-    <div class="modal-desc">${book.desc}</div>
+    <h3 style="font-size:18px;font-weight:700;color:#c9a96e;padding-right:40px">${title}</h3>
+    <div class="modal-cover" style="background:${color}">${emoji}</div>
+    <div class="modal-author">✍️ ${author} · ${category}</div>
+    <div class="modal-desc">${desc}</div>
+    ${year ? `<div class="modal-meta">
+      <div class="modal-meta-item">
+        <div class="val" style="color:#c9a96e">${year}</div>
+        <div class="lbl">出版年</div>
+      </div>
+    </div>` : ''}
+    <div style="margin-top:16px">
+      ${aiButton}
+    </div>
+  `;
+
+  document.getElementById('modalOverlay').style.display = 'flex';
+}
+
+function showBookDetailFromAI(bookName, bookAuthor, bookReason) {
+  if (!bookName || !bookAuthor) return;
+  
+  const modal = document.getElementById('bookModal');
+  const content = document.getElementById('modalContent');
+  
+  // 随机颜色
+  const colors = ['#c9a96e', '#6b9cce', '#34d399', '#a78bfa'];
+  const color = colors[Math.floor(Math.random() * colors.length)];
+  
+  // 添加AI询问选项，如果AI已接入
+  const hasAI = isAIReady();
+  const aiButton = hasAI 
+    ? `<button class="modal-btn" onclick="closeModal();sendMsg('请详细介绍一下《${bookName}》这本书，和我谈谈它', true)">
+        💬 和我聊聊这本书
+      </button>`
+    : '';
+
+  content.innerHTML = `
+    <h3 style="font-size:18px;font-weight:700;color:#c9a96e;padding-right:40px">${bookName}</h3>
+    <div class="modal-cover" style="background:${color}">📚</div>
+    <div class="modal-author">✍️ ${bookAuthor}</div>
+    <div class="modal-desc">
+      ${bookReason || 'AI基于你的生日日期和个人文学品味推荐的优秀读物。'}
+    </div>
     <div class="modal-meta">
       <div class="modal-meta-item">
-        <div class="val">${book.rating}</div>
-        <div class="lbl">评分</div>
-      </div>
-      <div class="modal-meta-item">
-        <div class="val">${book.pages}</div>
-        <div class="lbl">页数</div>
-      </div>
-      <div class="modal-meta-item">
-        <div class="val">${Math.abs(book.year)}</div>
-        <div class="lbl">${book.year < 0 ? '公元前' : '出版年'}</div>
+        <div class="val" style="color:#c9a96e">✦ AI</div>
+        <div class="lbl">来源</div>
       </div>
     </div>
-    <div style="margin-bottom:12px">
-      ${book.tags.map(t => `<span style="display:inline-block;margin:3px;padding:4px 10px;border-radius:20px;font-size:12px;background:${book.color};color:#374151">${t}</span>`).join('')}
+    <div style="margin-top:16px">
+      ${aiButton}
     </div>
-    <button class="modal-btn" onclick="closeModal();sendMsg('请详细介绍一下《${book.title}》这本书，和我谈谈它', true)">
-      💬 和我聊聊这本书
-    </button>
   `;
 
   document.getElementById('modalOverlay').style.display = 'flex';
 }
 
 function closeModal(e) {
-  if (!e || e.target === document.getElementById('modalOverlay')) {
+  // 修复叉叉按钮点击问题：允许按钮点击或overlay点击关闭弹窗
+  if (!e) {
     document.getElementById('modalOverlay').style.display = 'none';
+    return;
+  }
+  
+  const overlay = document.getElementById('modalOverlay');
+  const closeBtn = document.querySelector('#bookModal .modal-close');
+  
+  // 点击overlay本身、关闭按钮或modal容器关闭弹窗
+  if (e.target === overlay || e.target === closeBtn || e.target.closest('.modal-close')) {
+    overlay.style.display = 'none';
+  }
+  
+  // 阻止事件冒泡到overlay的onclick处理
+  if (e.target === closeBtn || e.target.closest('.modal-close')) {
+    e.stopPropagation();
   }
 }
 
 // ESC 关闭弹窗
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeModal({target: document.getElementById('modalOverlay')});
+  if (e.key === 'Escape') {
+    closeModal({target: document.getElementById('modalOverlay')});
+    closeBirthday({target: document.getElementById('birthdayOverlay')});
+  }
 });
 
 /* ============================================================
@@ -2923,6 +4045,867 @@ function enterLibrary(btn) {
     }, { once: true });
   }, 100);
 }
+
+/* ============================================================
+   生日书籍查询功能
+============================================================ */
+
+// 著名书籍出版数据集（按月-日分组）
+const BIRTHDAY_BOOKS = [
+  // ===== 一月 =====
+  {m:1,d:5, y:1936, name:'愤怒的葡萄', author:'约翰·斯坦贝克', country:'美国', desc:'大萧条时期农民的苦难与坚韧，诺贝尔文学奖获奖作品', emoji:'🍇'},
+  {m:1,d:6, y:1931, name:'好人难寻', author:'弗兰纳里·奥康纳', country:'美国', desc:'南方哥特式文学的代表作，探讨罪恶与救赎', emoji:'✝️'},
+  {m:1,d:14, y:1895, name:'阿拉贡', author:'马塞尔·普鲁斯特', country:'法国', desc:'追忆似水年华第二卷，意识流文学经典', emoji:'🌹'},
+  {m:1,d:29, y:1915, name:'上海孤儿', author:'石黑一雄', country:'英国', desc:'诺贝尔文学奖得主代表作之一，关于记忆与身份', emoji:'🏙️'},
+  {m:1,d:2, y:1923, name:'尤利西斯', author:'詹姆斯·乔伊斯', country:'爱尔兰', desc:'20世纪最重要的英语小说之一，意识流文学巅峰', emoji:'📖'},
+  // ===== 二月 =====
+  {m:2,d:4, y:2005, name:'追风筝的人', author:'卡勒德·胡赛尼', country:'美国', desc:'关于友谊、背叛与救赎的感人故事', emoji:'🪁'},
+  {m:2,d:12, y:1817, name:'傲慢与偏见', author:'简·奥斯汀', country:'英国', desc:'最经典的英国爱情小说，维多利亚时代社会风情画', emoji:'💌'},
+  {m:2,d:14, y:1943, name:'小王子', author:'圣埃克苏佩里', country:'法国', desc:'全球销量超2亿册的童话哲理经典', emoji:'🌟'},
+  {m:2,d:27, y:1932, name:'美丽新世界', author:'赫胥黎', country:'英国', desc:'反乌托邦文学三大经典之一', emoji:'🌍'},
+  {m:2,d:1, y:1868, name:'罪与罚', author:'陀思妥耶夫斯基', country:'俄国', desc:'探讨人性深渊的俄国文学巨著', emoji:'🔪'},
+  // ===== 三月 =====
+  {m:3,d:4, y:1852, name:'呼啸山庄', author:'艾米莉·勃朗特', country:'英国', desc:'维多利亚时代最激情澎湃的爱情悲剧', emoji:'⛈️'},
+  {m:3,d:17, y:1970, name:'杯子里的街道', author:'伊塔洛·卡尔维诺', country:'意大利', desc:'意大利文学大师的城市寓言', emoji:'☕'},
+  {m:3,d:20, y:1852, name:'雾都孤儿', author:'查尔斯·狄更斯', country:'英国', desc:'伦敦底层社会的黑暗画卷', emoji:'🧒'},
+  {m:3,d:26, y:1920, name:'美国悲剧', author:'德莱塞', country:'美国', desc:'美国自然主义文学代表作', emoji:'🗽'},
+  {m:3,d:10, y:1955, name:'洛丽塔', author:'纳博科夫', country:'美国', desc:'20世纪最具争议也最具文学性的小说之一', emoji:'🦋'},
+  // ===== 四月 =====
+  {m:4,d:4, y:1925, name:'了不起的盖茨比', author:'菲茨杰拉德', country:'美国', desc:'爵士时代的美国梦，20世纪最佳英语小说', emoji:'🍸'},
+  {m:4,d:13, y:1939, name:'愤怒的葡萄', author:'约翰·斯坦贝克', country:'美国', desc:'普利策奖获奖小说，美国大萧条的史诗', emoji:'🍇'},
+  {m:4,d:16, y:1945, name:'动物庄园', author:'乔治·奥威尔', country:'英国', desc:'最经典的政治寓言小说，反极权主义圣经', emoji:'🐷'},
+  {m:4,d:21, y:1926, name:'太阳照常升起', author:'海明威', country:'美国', desc:'"迷惘的一代"的文学宣言', emoji:'☀️'},
+  {m:4,d:28, y:1925, name:'了不起的盖茨比（修订版）', author:'菲茨杰拉德', country:'美国', desc:'最终定版，美国文学里程碑', emoji:'💎'},
+  // ===== 五月 =====
+  {m:5,d:3, y:1927, name:'到灯塔去', author:'弗吉尼亚·伍尔夫', country:'英国', desc:'意识流文学杰作，探讨时间与记忆', emoji:'🏮'},
+  {m:5,d:9, y:1886, name:'八十天环游世界', author:'儒勒·凡尔纳', country:'法国', desc:'科幻冒险文学的开山之作', emoji:'🌍'},
+  {m:5,d:29, y:1905, name:'梦的解析', author:'弗洛伊德', country:'奥地利', desc:'精神分析学的奠基之作', emoji:'💭'},
+  {m:5,d:17, y:1937, name:'思考，快与慢', author:'丹尼尔·卡尼曼', country:'以色列', desc:'诺贝尔经济学奖得主的思维革命', emoji:'🧠'},
+  {m:5,d:5, y:1940, name:'丧钟为谁而鸣', author:'海明威', country:'美国', desc:'西班牙内战背景下的战争与爱情', emoji:'🔔'},
+  // ===== 六月 =====
+  {m:6,d:8, y:1949, name:'1984', author:'乔治·奥威尔', country:'英国', desc:'最伟大的反乌托邦小说，预言极权社会的经典', emoji:'👁️'},
+  {m:6,d:8, y:1936, name:'杀死一只知更鸟', author:'哈珀·李', country:'美国', desc:'普利策奖获奖作品，关于正义与种族歧视', emoji:'🐦'},
+  {m:6,d:16, y:1904, name:' 所罗门王的宝藏', author:'H·R·哈葛德', country:'英国', desc:'冒险小说的开山之作', emoji:'👑'},
+  {m:6,d:30, y:1815, name:'爱丽丝梦游仙境', author:'刘易斯·卡罗尔', country:'英国', desc:'最著名的儿童奇幻文学经典', emoji:'🐰'},
+  {m:6,d:1, y:1997, name:'哈利·波特与魔法石', author:'J.K.罗琳', country:'英国', desc:'全球现象级奇幻文学，影响了一代人', emoji:'⚡'},
+  // ===== 七月 =====
+  {m:7,d:4, y:1862, name:'悲惨世界', author:'维克多·雨果', country:'法国', desc:'法国文学最伟大的史诗之一', emoji:'🎭'},
+  {m:7,d:6, y:1885, name:'老人与海', author:'海明威', country:'美国', desc:'诺贝尔文学奖获奖中篇小说', emoji:'🐟'},
+  {m:7,d:11, y:1960, name:'杀死一只知更鸟（再版）', author:'哈珀·李', country:'美国', desc:'美国文学史上最受欢迎的小说之一', emoji:'🌿'},
+  {m:7,d:16, y:1951, name:'麦田里的守望者', author:'塞林格', country:'美国', desc:'青春叛逆的圣经，影响了几代年轻人', emoji:'🌾'},
+  {m:7,d:18, y:1936, name:'飘（乱世佳人）', author:'玛格丽特·米切尔', country:'美国', desc:'普利策奖获奖小说，南北战争史诗', emoji:'🌪️'},
+  // ===== 八月 =====
+  {m:8,d:1, y:1944, name:'第二十二条军规', author:'约瑟夫·海勒', country:'美国', desc:'黑色幽默文学的巅峰之作', emoji:'✈️'},
+  {m:8,d:6, y:1945, name:'安妮日记', author:'安妮·弗兰克', country:'荷兰', desc:'最真实的二战大屠杀记录', emoji:'📓'},
+  {m:8,d:18, y:1946, name:'瓦尔登湖', author:'亨利·梭罗', country:'美国', desc:'自然文学的圣经，简朴生活的哲学', emoji:'🌲'},
+  {m:8,d:17, y:1945, name:'裸体午餐', author:'威廉·巴勒斯', country:'美国', desc:'"垮掉的一代"代表作', emoji:'📚'},
+  {m:8,d:8, y:1939, name:'丧钟为谁而鸣', author:'海明威', country:'美国', desc:'海明威最好的长篇小说之一', emoji:'🏔️'},
+  // ===== 九月 =====
+  {m:9,d:2, y:1945, name:'冷血', author:'杜鲁门·卡波特', country:'美国', desc:'非虚构小说的开山之作', emoji:'🩸'},
+  {m:9,d:21, y:1937, name:'霍比特人', author:'J.R.R.托尔金', country:'英国', desc:'奇幻文学的开山之作', emoji:'🧙'},
+  {m:9,d:25, y:1954, name:'蝇王', author:'威廉·戈尔丁', country:'英国', desc:'诺贝尔文学奖获奖作品，人性暗面寓言', emoji:'🐝'},
+  {m:9,d:15, y:1890, name:'道林·格雷的画像', author:'奥斯卡·王尔德', country:'爱尔兰', desc:'唯美主义文学的经典之作', emoji:'🖼️'},
+  {m:9,d:21, y:1948, name:'百年孤独', author:'加西亚·马尔克斯', country:'哥伦比亚', desc:'诺贝尔文学奖获奖作品，魔幻现实主义巅峰', emoji:'🦋'},
+  // ===== 十月 =====
+  {m:10,d:1, y:1962, name:'寂静的春天', author:'蕾切尔·卡逊', country:'美国', desc:'环保运动的奠基之作', emoji:'🍃'},
+  {m:10,d:5, y:1979, name:'白夜行', author:'东野圭吾', country:'日本', desc:'日本推理文学的巅峰之作', emoji:'🌙'},
+  {m:10,d:22, y:1844, name:'红字', author:'纳撒尼尔·霍桑', country:'美国', desc:'美国文学史上第一部象征主义小说', emoji:'🔴'},
+  {m:10,d:12, y:1922, name:'尤利西斯（完整版）', author:'詹姆斯·乔伊斯', country:'爱尔兰', desc:'现代主义文学的里程碑', emoji:'📖'},
+  {m:10,d:3, y:1928, name:'西线无战事', author:'雷马克', country:'德国', desc:'最伟大的反战小说', emoji:'⚔️'},
+  // ===== 十一月 =====
+  {m:11,d:1, y:1922, name:'了不起的盖茨比（首版）', author:'菲茨杰拉德', country:'美国', desc:'初版问世，开启爵士时代文学', emoji:'🎩'},
+  {m:11,d:5, y:1851, name:'白鲸', author:'赫尔曼·梅尔维尔', country:'美国', desc:'美国文学的伟大史诗', emoji:'🐋'},
+  {m:11,d:15, y:1926, name:'老人与海（初版）', author:'海明威', country:'美国', desc:'硬汉文学的宣言书', emoji:'🎣'},
+  {m:11,d:28, y:1759, name:'弃儿汤姆·琼斯的历史', author:'亨利·菲尔丁', country:'英国', desc:'英国小说发展史上的里程碑', emoji:'📖'},
+  {m:11,d:13, y:1943, name:'存在与虚无', author:'萨特', country:'法国', desc:'存在主义哲学的奠基之作', emoji:'🤔'},
+  // ===== 十二月 =====
+  {m:12,d:1, y:1943, name:'金锁记', author:'张爱玲', country:'中国', desc:'张爱玲最优秀的小说之一，中国现代文学经典', emoji:'🔒'},
+  {m:12,d:5, y:1933, name:'看不见的人', author:'拉尔夫·埃里森', country:'美国', desc:'美国黑人文学的里程碑', emoji:'👤'},
+  {m:12,d:19, y:1843, name:'圣诞颂歌', author:'查尔斯·狄更斯', country:'英国', desc:'最经典的圣诞故事，温暖人心的永恒之作', emoji:'🎄'},
+  {m:12,d:21, y:1937, name:'鼠疫', author:'加缪', country:'法国', desc:'诺贝尔文学奖获奖作品，存在主义文学经典', emoji:'🦠'},
+  {m:12,d:24, y:1915, name:'变形记', author:'弗兰兹·卡夫卡', country:'奥地利', desc:'20世纪最伟大的短篇小说之一', emoji:'🪲'},
+];
+
+// ===== 滚轮选择器 =====
+// 核心原理：wheel-col 高度180px，highlight在50%即90px处
+// wheel-track有padding-top:72px(2个ITEM_HEIGHT)，第0个item中心在72+18=90px
+// 所以自然对齐！translateY = -offset * ITEM_HEIGHT 即可
+const ITEM_HEIGHT = 36;
+const VISIBLE_ITEMS = 5; // 180/36=5个可见item
+const HALF_VISIBLE = Math.floor(VISIBLE_ITEMS / 2); // 2个上方item = 72px
+let wheelState = { year: 2008, month: 6, day: 15 };
+let wheelAnimating = false;
+
+function getItemHeight() {
+  // 响应式：移动端item高度30px
+  if (window.innerWidth <= 600) return 30;
+  return ITEM_HEIGHT;
+}
+
+function initWheelPickers() {
+  buildWheel('trackYear', 'year', 1930, 2025, wheelState.year);
+  buildWheel('trackMonth', 'month', 1, 12, wheelState.month);
+  buildWheel('trackDay', 'day', 1, 31, wheelState.day);
+
+  // 绑定触摸/鼠标事件
+  ['wheelYear', 'wheelMonth', 'wheelDay'].forEach(id => {
+    const col = document.getElementById(id);
+    if (!col) return;
+
+    let startY = 0, startTranslate = 0, isDragging = false;
+    let currentType = '';
+
+    const getType = () => id.replace('wheel', '').toLowerCase();
+
+    col.addEventListener('mousedown', e => {
+      e.preventDefault();
+      const track = col.querySelector('.wheel-track');
+      startY = e.clientY;
+      startTranslate = getTranslateY(track);
+      isDragging = true;
+      currentType = getType();
+    });
+
+    col.addEventListener('touchstart', e => {
+      const track = col.querySelector('.wheel-track');
+      startY = e.touches[0].clientY;
+      startTranslate = getTranslateY(track);
+      isDragging = true;
+      currentType = getType();
+    }, { passive: true });
+
+    const onMove = (clientY) => {
+      if (!isDragging || !currentType) return;
+      const delta = clientY - startY;
+      const track = col.querySelector('.wheel-track');
+      if (!track) return;
+      const ih = getItemHeight();
+      const maxRange = getMaxTranslate(currentType, ih);
+      let newY = startTranslate + delta;
+      newY = Math.max(maxRange, Math.min(0, newY));
+      track.style.transition = 'none';
+      track.style.transform = `translateY(${newY}px)`;
+    };
+
+    document.addEventListener('mousemove', e => { if (isDragging) onMove(e.clientY); });
+    document.addEventListener('touchmove', e => { if (isDragging) onMove(e.touches[0].clientY); }, { passive: true });
+
+    const onEnd = () => {
+      if (!isDragging) return;
+      isDragging = false;
+      const track = col.querySelector('.wheel-track');
+      if (!track) return;
+      const type = getType();
+      snapWheel(type, track);
+    };
+
+    document.addEventListener('mouseup', onEnd);
+    document.addEventListener('touchend', onEnd);
+
+    // 鼠标滚轮
+    col.addEventListener('wheel', e => {
+      e.preventDefault();
+      const type = getType();
+      const ih = getItemHeight();
+      const delta = e.deltaY > 0 ? 1 : -1;
+      const current = wheelState[type];
+      const min = type === 'year' ? 1930 : 1;
+      const max = type === 'year' ? 2025 : type === 'month' ? 12 : getDaysInMonth(wheelState.year, wheelState.month);
+      const newVal = Math.max(min, Math.min(max, current + delta));
+      if (newVal !== current) {
+        wheelState[type] = newVal;
+        animateWheel(type, newVal);
+        if (type === 'year' || type === 'month') updateDayWheel();
+      }
+    }, { passive: false });
+
+    // 点击选择
+    col.addEventListener('click', e => {
+      const item = e.target.closest('.wheel-item');
+      if (!item) return;
+      const val = parseInt(item.dataset.value);
+      if (isNaN(val)) return;
+      const type = getType();
+      wheelState[type] = val;
+      animateWheel(type, val);
+      if (type === 'year' || type === 'month') updateDayWheel();
+    });
+  });
+}
+
+function buildWheel(trackId, type, min, max, current) {
+  const track = document.getElementById(trackId);
+  if (!track) return;
+  track.innerHTML = '';
+  // 动态设置padding以适配移动端
+  const ih = getItemHeight();
+  const pad = ih * HALF_VISIBLE;
+  track.style.paddingTop = pad + 'px';
+  track.style.paddingBottom = pad + 'px';
+  for (let i = min; i <= max; i++) {
+    const item = document.createElement('div');
+    item.className = 'wheel-item';
+    item.dataset.value = i;
+    item.textContent = type === 'year' ? i + '年' : i;
+    track.appendChild(item);
+  }
+  animateWheel(type, current);
+}
+
+function animateWheel(type, value) {
+  const trackId = 'track' + type.charAt(0).toUpperCase() + type.slice(1);
+  const track = document.getElementById(trackId);
+  if (!track) return;
+  
+  const ih = getItemHeight();
+  const offset = getIndex(type, value);
+  // 核心公式：padding-top已经让第0个item在highlight位置
+  // 要让第offset个item移到highlight位置，只需向上平移 offset * itemHeight
+  const targetTranslate = -offset * ih;
+  
+  track.style.transition = 'transform 0.35s cubic-bezier(0.25, 0.1, 0.25, 1)';
+  track.style.transform = `translateY(${targetTranslate}px)`;
+  updateWheelItems(type, value);
+}
+
+function snapWheel(type, track) {
+  const ih = getItemHeight();
+  const currentTranslate = getTranslateY(track);
+  // 按item高度计算最近的索引
+  const index = Math.round(-currentTranslate / ih);
+  const items = track.querySelectorAll('.wheel-item');
+  const clampedIndex = Math.max(0, Math.min(items.length - 1, index));
+  const value = parseInt(items[clampedIndex].dataset.value);
+  wheelState[type] = value;
+  
+  // 统一使用纯数学计算
+  const offset = getIndex(type, value);
+  const translate = -offset * ih;
+  
+  track.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)';
+  track.style.transform = `translateY(${translate}px)`;
+  updateWheelItems(type, value);
+  if (type === 'year' || type === 'month') updateDayWheel();
+}
+
+function getTranslateY(el) {
+  if (!el) return 0;
+  const style = window.getComputedStyle(el);
+  const matrix = new DOMMatrix(style.transform);
+  return matrix.m42;
+}
+
+function getIndex(type, value) {
+  const min = type === 'year' ? 1930 : 1;
+  return value - min;
+}
+
+function getMaxTranslate(type, ih) {
+  const track = document.getElementById('track' + type.charAt(0).toUpperCase() + type.slice(1));
+  if (!track) return 0;
+  const itemH = ih || getItemHeight();
+  return -(track.children.length - 1) * itemH;
+}
+
+function updateWheelItems(type, value) {
+  const track = document.getElementById('track' + type.charAt(0).toUpperCase() + type.slice(1));
+  if (!track) return;
+  const items = track.querySelectorAll('.wheel-item');
+  const index = getIndex(type, value);
+  items.forEach((item, i) => {
+    item.classList.remove('selected', 'near');
+    if (i === index) item.classList.add('selected');
+    else if (Math.abs(i - index) === 1) item.classList.add('near');
+  });
+}
+
+function getDaysInMonth(year, month) {
+  return new Date(year, month, 0).getDate();
+}
+
+function updateDayWheel() {
+  const days = getDaysInMonth(wheelState.year, wheelState.month);
+  const track = document.getElementById('trackDay');
+  if (!track) return;
+  track.innerHTML = '';
+  const ih = getItemHeight();
+  const pad = ih * HALF_VISIBLE;
+  track.style.paddingTop = pad + 'px';
+  track.style.paddingBottom = pad + 'px';
+  for (let i = 1; i <= days; i++) {
+    const item = document.createElement('div');
+    item.className = 'wheel-item';
+    item.dataset.value = i;
+    item.textContent = i;
+    track.appendChild(item);
+  }
+  if (wheelState.day > days) wheelState.day = days;
+  animateWheel('day', wheelState.day);
+}
+
+// ===== 生日查询 =====
+function openBirthday() {
+  // 检查是否已接入AI（API已配置或已连接）
+  const isAIConnected = isAIReady();
+  
+  if (!isAIConnected) {
+    // 如果AI未接入，显示提示信息
+    const chatArea = document.getElementById('chatArea');
+    if (chatArea) {
+      const warningDiv = document.createElement('div');
+      warningDiv.className = 'message bot';
+      warningDiv.innerHTML = `
+        <div class="msg-avatar">🎂</div>
+        <div class="msg-content">
+          <div class="msg-sender">BookBot · 温馨提醒</div>
+          <div class="msg-bubble warning-bubble">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:18px">🔒</span>
+              <div>
+                <div style="font-weight:600;color:var(--primary-light)">文学生日功能需要AI接入</div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:2px">
+                  请先配置AI API Key以解锁智能推荐功能
+                </div>
+              </div>
+            </div>
+            <div style="margin-top:10px;display:flex;gap:8px">
+              <button onclick="openSettings()" class="small-btn" style="background:var(--gradient-primary);color:white;border:none;padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer">
+                ⚙️ 前往AI设置
+              </button>
+              <button onclick="clearChat()" class="small-btn" style="background:transparent;border:1px solid var(--border);padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer">
+                我知道了
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      chatArea.appendChild(warningDiv);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+    return;
+  }
+  
+  // AI已接入，正常打开文学生日弹窗
+  document.getElementById('birthdayOverlay').style.display = 'flex';
+  document.getElementById('birthdayResult').className = 'birthday-result';
+  document.getElementById('birthdayResult').innerHTML = '';
+  initWheelPickers();
+  
+  // 更新文学生日按钮状态（可选）
+  updateBirthdayBtnState(true);
+}
+
+function isAIReady() {
+  // 检查AI是否已接入（API已配置或已连接）
+  const badge = document.getElementById('apiStatusBadge');
+  if (!badge) return false;
+  
+  // 检查状态徽章是否有connected类
+  if (badge.classList.contains('connected')) {
+    return true;
+  }
+  
+  // 还可以直接检查localStorage中是否有有效的API Key
+  const models = ['deepseek', 'openai', 'claude', 'qwen', 'glm', 'moonshot', 'custom'];
+  for (const model of models) {
+    const savedKey = localStorage.getItem(`${model}_api_key`);
+    if (savedKey && savedKey.length > 10 && !savedKey.includes('●')) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+function updateBirthdayBtnState(isEnabled) {
+  // 更新文学生日按钮状态（可选功能）
+  const birthdayBtn = document.querySelector('button[onclick="openBirthday()"]');
+  if (birthdayBtn) {
+    if (isEnabled) {
+      birthdayBtn.style.opacity = '1';
+      birthdayBtn.style.cursor = 'pointer';
+      birthdayBtn.title = '';
+    } else {
+      birthdayBtn.style.opacity = '0.6';
+      birthdayBtn.style.cursor = 'not-allowed';
+      birthdayBtn.title = '请先配置AI Key解锁此功能';
+    }
+  }
+}
+
+function closeBirthday(e) {
+  // 修复叉叉按钮点击问题：允许按钮点击或overlay点击关闭弹窗
+  if (!e) {
+    document.getElementById('birthdayOverlay').style.display = 'none';
+    return;
+  }
+  
+  const overlay = document.getElementById('birthdayOverlay');
+  // 点击overlay本身或关闭按钮都关闭弹窗
+  if (e.target === overlay || e.target.classList?.contains('modal-close')) {
+    overlay.style.display = 'none';
+  }
+  
+  // 阻止事件冒泡到overlay的onclick处理
+  if (e.target.classList?.contains('modal-close')) {
+    e.stopPropagation();
+  }
+}
+
+async function queryBirthdayBooks() {
+  const { year, month, day } = wheelState;
+  const resultEl = document.getElementById('birthdayResult');
+  resultEl.className = 'birthday-result';
+  resultEl.innerHTML = '<div style="text-align:center;padding:16px"><div style="animation:blink 1s infinite;color:var(--primary)">✨</div><div style="color:var(--text-muted);font-size:13px;margin-top:8px">正在为你匹配文学缘分...</div></div>';
+
+  // 检查是否有AI接入
+  const hasAI = isAIReady();
+  
+  setTimeout(async () => {
+    // 第一优先：同月同日
+    let results = BIRTHDAY_BOOKS.filter(b => b.m === month && b.d === day);
+
+    if (results.length > 0) {
+      renderResult(resultEl, results, `🎂 ${month}月${day}日 · 当天出版的书`);
+      
+      // 如果有AI，让它推荐2-3本书
+      if (hasAI) {
+        await addAIRecommendations(resultEl, year, month, day, results);
+      }
+    } else {
+      // 第二优先：同月
+      let monthResults = BIRTHDAY_BOOKS.filter(b => b.m === month);
+      if (monthResults.length > 0) {
+        renderResult(resultEl, monthResults.slice(0, 4), `🌙 ${month}月份 · 当月出版的书`);
+        
+        // 如果有AI，让它推荐2-3本书
+        if (hasAI) {
+          await addAIRecommendations(resultEl, year, month, day, monthResults);
+        }
+      } else {
+        // 第三优先：同年
+        let yearResults = BIRTHDAY_BOOKS.filter(b => b.y === year);
+        if (yearResults.length > 0) {
+          renderResult(resultEl, yearResults.slice(0, 4), `✨ ${year}年 · 同年出版的书`);
+          
+          // 如果有AI，让它推荐2-3本书
+          if (hasAI) {
+            await addAIRecommendations(resultEl, year, month, day, yearResults);
+          }
+        } else {
+          let finalHtml = `
+            <div class="birthday-no-result">
+              <span class="emoji">📚</span>
+              <p>没有找到 ${year}年${month}月${day}日 当天出版的书</p>
+              <p style="margin-top:8px;color:var(--text-dim)">换一个日期试试吧！</p>
+            </div>`;
+          
+          // 如果有AI，让它推荐其他相关的书
+          if (hasAI) {
+            const aiRecommendation = await getAIRecommendationsOnly(year, month, day);
+            finalHtml += aiRecommendation;
+          }
+          
+          resultEl.innerHTML = finalHtml;
+        }
+      }
+    }
+    resultEl.className = 'birthday-result visible';
+  }, 600);
+}
+
+function renderResult(container, books, label) {
+  let html = `<div class="birthday-result-label">${label} <span class="tag">共${books.length}本</span></div>`;
+  books.forEach(book => {
+    const colors = ['rgba(201,169,110,0.15)','rgba(107,156,206,0.15)','rgba(52,211,153,0.15)','rgba(167,139,250,0.15)'];
+    const bg = colors[Math.floor(Math.random() * colors.length)];
+    html += `
+      <div class="birthday-book-item">
+        <div class="birthday-book-cover" style="background:${bg}">${book.emoji}</div>
+        <div class="birthday-book-info">
+          <div class="birthday-book-name">《${book.name}》</div>
+          <div class="birthday-book-author">${book.author} · ${book.country}</div>
+          <div class="birthday-book-meta">
+            <span class="birthday-book-date">${book.y}年${book.m}月${book.d}日出版</span>
+            <button class="book-detail-btn" onclick="showBookDetail(${book.y}, '${book.name.replace(/'/g, "\\'")}', '${book.author.replace(/'/g, "\\'")}', '${book.country}', '${book.desc.replace(/'/g, "\\'")}')">📖 了解详情</button>
+          </div>
+          <div class="birthday-book-desc">${book.desc}</div>
+        </div>
+      </div>`;
+  });
+  container.innerHTML = html;
+}
+
+async function addAIRecommendations(container, year, month, day, foundBooks) {
+  try {
+    // 添加AI推荐部分
+    container.innerHTML += `
+      <div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--border)">
+        <div class="birthday-result-label">🤖 AI 智能推荐 <span class="tag" style="background:var(--gradient-primary)">AI推荐</span></div>
+        <div id="aiRecommendations" style="text-align:center;padding:16px">
+          <div style="animation:blink 1s infinite;color:var(--primary)">🤔</div>
+          <div style="color:var(--text-muted);font-size:13px;margin-top:8px">正在为你生成个性化推荐...</div>
+        </div>
+      </div>`;
+    
+    // 准备书籍列表供AI参考
+    const bookRefs = foundBooks.slice(0, 3).map(b => `《${b.name}》（${b.author}）`).join('、');
+    
+    // 调用AI获取推荐
+    const recommendationText = await getAIBookRecommendation(year, month, day, bookRefs);
+    
+    // 解析AI回复，提取推荐书籍
+    const recommendedBooks = parseAIRecommendations(recommendationText);
+    
+    // 显示AI推荐
+    let aiHtml = '<div class="birthday-ai-recommendations">';
+    
+    if (recommendedBooks.length > 0) {
+      recommendedBooks.forEach((book, index) => {
+        const colors = ['rgba(201,169,110,0.15)','rgba(107,156,206,0.15)','rgba(52,211,153,0.15)'];
+        const bg = colors[index % colors.length];
+        aiHtml += `
+          <div class="birthday-book-item" style="border-left:3px solid var(--primary)">
+            <div class="birthday-book-cover" style="background:${bg}">📚</div>
+            <div class="birthday-book-info">
+              <div class="birthday-book-name">${book.name}</div>
+              <div class="birthday-book-author">${book.author}</div>
+              <div class="birthday-book-desc">${book.reason}</div>
+              <div class="birthday-book-meta">
+                <span class="ai-tag" style="background:var(--gradient-primary);color:white;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600">✦ AI推荐</span>
+                <button class="book-detail-btn" onclick="showBookDetailFromAI('${book.name.replace(/'/g, "\\'")}', '${book.author.replace(/'/g, "\\'")}', '${book.reason.replace(/'/g, "\\'")}')">🔍 深入了解</button>
+              </div>
+            </div>
+          </div>`;
+      });
+      
+      aiHtml += `<div style="margin-top:12px;font-size:12px;color:var(--text-dim);text-align:center">📈 基于你的生日和文学品味，AI智能分析推荐</div>`;
+    } else {
+      // 如果解析失败，显示原始回复
+      aiHtml += `
+        <div style="background:var(--bg3);padding:16px;border-radius:12px;border:1px solid var(--border);color:var(--text)">
+          <div style="font-weight:600;margin-bottom:8px">AI推荐理由：</div>
+          <div style="font-size:14px;line-height:1.6">${recommendationText}</div>
+        </div>`;
+    }
+    
+    aiHtml += '</div>';
+    document.getElementById('aiRecommendations').innerHTML = aiHtml;
+  } catch (error) {
+    console.error('AI推荐失败:', error);
+    container.innerHTML += `
+      <div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--border)">
+        <div class="birthday-result-label">🤖 AI 智能推荐</div>
+        <div style="background:var(--bg3);padding:16px;border-radius:12px;border:1px solid var(--border);color:var(--text-dim);text-align:center">
+          <div>🚧 AI推荐暂时不可用</div>
+          <div style="font-size:12px;margin-top:4px">请联系管理员或稍后重试</div>
+        </div>
+      </div>`;
+  }
+}
+
+async function getAIRecommendationsOnly(year, month, day) {
+  try {
+    const recommendationText = await getAIBookRecommendation(year, month, day, '');
+    
+    // 解析AI回复，提取推荐书籍
+    const recommendedBooks = parseAIRecommendations(recommendationText);
+    
+    if (recommendedBooks.length > 0) {
+      let aiHtml = `
+        <div style="margin-top:32px">
+          <div class="birthday-result-label">🤖 AI 智能推荐 <span class="tag" style="background:var(--gradient-primary)">AI推荐</span></div>
+          <div class="birthday-ai-recommendations">`;
+      
+      recommendedBooks.forEach((book, index) => {
+        const colors = ['rgba(201,169,110,0.15)','rgba(107,156,206,0.15)','rgba(52,211,153,0.15)'];
+        const bg = colors[index % colors.length];
+        aiHtml += `
+          <div class="birthday-book-item" style="border-left:3px solid var(--primary)">
+            <div class="birthday-book-cover" style="background:${bg}">📚</div>
+            <div class="birthday-book-info">
+              <div class="birthday-book-name">${book.name}</div>
+              <div class="birthday-book-author">${book.author}</div>
+              <div class="birthday-book-desc">${book.reason}</div>
+              <div class="birthday-book-meta">
+                <span class="ai-tag" style="background:var(--gradient-primary);color:white;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600">✦ AI推荐</span>
+                <button class="book-detail-btn" onclick="showBookDetailFromAI('${book.name.replace(/'/g, "\\'")}', '${book.author.replace(/'/g, "\\'")}', '${book.reason.replace(/'/g, "\\'")}')">🔍 深入了解</button>
+              </div>
+            </div>
+          </div>`;
+      });
+      
+      aiHtml += `
+            <div style="margin-top:12px;font-size:12px;color:var(--text-dim);text-align:center">📈 AI根据你的生日日期智能推荐书籍</div>
+          </div>
+        </div>`;
+      return aiHtml;
+    } else {
+      return `
+        <div style="margin-top:32px">
+          <div class="birthday-result-label">🤖 AI 智能推荐</div>
+          <div style="background:var(--bg3);padding:16px;border-radius:12px;border:1px solid var(--border);color:var(--text)">
+            <div style="font-weight:600;margin-bottom:8px">AI推荐理由：</div>
+            <div style="font-size:14px;line-height:1.6">${recommendationText}</div>
+          </div>
+        </div>`;
+    }
+  } catch (error) {
+    return '';
+  }
+}
+
+async function getAIBookRecommendation(year, month, day, bookRefs) {
+  const prompt = bookRefs 
+    ? `用户生日：${year}年${month}月${day}日。已找到相关书籍：${bookRefs}。请基于这些书籍和用户生日，额外推荐2-3本相关的优秀书籍，并简要说明推荐理由。格式：第一行"推荐1：《书名》（作者名）"，第二行"推荐理由：..."，重复2-3组。`
+    : `用户生日：${year}年${month}月${day}日。虽然未找到当天出版的正版经典书籍，但请基于这个生日日期，为用户推荐2-3本高质量的经典或现代文学作品，并简要说明推荐理由。格式：第一行"推荐1：《书名》（作者名）"，第二行"推荐理由：..."，重复2-3组。`;
+  
+  try {
+    const response = await callAI(prompt);
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let fullText = '';
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      fullText += decoder.decode(value, { stream: true });
+    }
+    
+    // 提取AI回复内容
+    let aiReply = '';
+    const lines = fullText.split('\n');
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      const data = line.slice(6).trim();
+      if (data === '[DONE]') break;
+      try {
+        const json = JSON.parse(data);
+        const delta = json.choices?.[0]?.delta?.content || '';
+        aiReply += delta;
+      } catch (e) {
+        // 跳过解析错误
+      }
+    }
+    
+    return aiReply || '抱歉，AI暂时无法生成推荐，请稍后重试。';
+  } catch (error) {
+    console.error('AI调用失败:', error);
+    return 'AI推荐暂时不可用，请检查网络连接或API配置。';
+  }
+}
+
+function parseAIRecommendations(text) {
+  const books = [];
+  const lines = text.split('\n');
+  
+  let currentBook = null;
+  
+  for (const line of lines) {
+    const trimmed = line.trim();
+    
+    // 匹配推荐格式：推荐1：《书名》（作者）
+    const bookMatch = trimmed.match(/推荐\d+[：:]\s*《(.+?)》\s*（(.+?)）/);
+    if (bookMatch) {
+      if (currentBook) {
+        books.push(currentBook);
+      }
+      currentBook = {
+        name: `《${bookMatch[1]}》`,
+        author: bookMatch[2],
+        reason: ''
+      };
+    }
+    // 匹配推荐理由
+    else if (trimmed.startsWith('推荐理由：') || trimmed.startsWith('推荐理由:')) {
+      const reason = trimmed.replace(/推荐理由[：:]\s*/, '');
+      if (currentBook) {
+        currentBook.reason = reason;
+      }
+    }
+    // 如果没有匹配到格式，但当前有书籍，则可能是理由的续行
+    else if (currentBook && trimmed && !currentBook.reason) {
+      currentBook.reason = trimmed;
+    } else if (currentBook && trimmed && currentBook.reason) {
+      currentBook.reason += ' ' + trimmed;
+    }
+  }
+  
+  // 添加最后一个书籍
+  if (currentBook && currentBook.name && currentBook.author && currentBook.reason) {
+    books.push(currentBook);
+  }
+  
+  // 如果解析失败，尝试其他格式
+  if (books.length === 0) {
+    // 尝试匹配《书名》（作者）格式
+    const bookRegex = /《(.+?)》\s*（(.+?)）\s*-?\s*(.+?)(?=《|$)/g;
+    let match;
+    while ((match = bookRegex.exec(text)) !== null && books.length < 3) {
+      books.push({
+        name: `《${match[1]}》`,
+        author: match[2],
+        reason: match[3].trim()
+      });
+    }
+  }
+  
+  return books.slice(0, 3); // 最多返回3本书
+}
+
+// ============================================================
+// 可拖拽侧边条功能
+// ============================================================
+
+let isDraggingScrollbar = false;
+let startY = 0;
+let startScrollTop = 0;
+let scrollbarHandle = null;
+
+// 初始化侧边条
+function initScrollbarHandle() {
+  scrollbarHandle = document.getElementById('scrollbarHandle');
+  if (!scrollbarHandle) return;
+  
+  // 只有当有需要滚动的内容时才显示侧边条
+  const chatArea = document.getElementById('chatArea');
+  if (chatArea && chatArea.scrollHeight > chatArea.clientHeight) {
+    scrollbarHandle.classList.remove('hidden');
+  } else {
+    scrollbarHandle.classList.add('hidden');
+  }
+  
+  // 添加鼠标事件监听器
+  scrollbarHandle.addEventListener('mousedown', startDrag);
+  scrollbarHandle.addEventListener('touchstart', startDragTouch, { passive: false });
+  
+  // 监听窗口大小变化
+  window.addEventListener('resize', initScrollbarHandle);
+  // 监听内容变化
+  chatArea.addEventListener('DOMNodeInserted', handleContentChange);
+  chatArea.addEventListener('DOMNodeRemoved', handleContentChange);
+}
+
+function handleContentChange() {
+  // 延迟检查以确保DOM已更新
+  setTimeout(initScrollbarHandle, 50);
+}
+
+function startDrag(e) {
+  e.preventDefault();
+  isDraggingScrollbar = true;
+  scrollbarHandle.classList.add('dragging');
+  
+  startY = e.clientY;
+  const chatArea = document.getElementById('chatArea');
+  startScrollTop = chatArea.scrollTop;
+  
+  document.addEventListener('mousemove', onDrag);
+  document.addEventListener('mouseup', stopDrag);
+}
+
+function startDragTouch(e) {
+  e.preventDefault();
+  if (e.touches.length === 0) return;
+  
+  isDraggingScrollbar = true;
+  scrollbarHandle.classList.add('dragging');
+  
+  startY = e.touches[0].clientY;
+  const chatArea = document.getElementById('chatArea');
+  startScrollTop = chatArea.scrollTop;
+  
+  document.addEventListener('touchmove', onDragTouch, { passive: false });
+  document.addEventListener('touchend', stopDrag);
+  document.addEventListener('touchcancel', stopDrag);
+}
+
+function onDrag(e) {
+  if (!isDraggingScrollbar) return;
+  e.preventDefault();
+  
+  const deltaY = e.clientY - startY;
+  const chatArea = document.getElementById('chatArea');
+  const scrollRatio = chatArea.scrollHeight / chatArea.clientHeight;
+  
+  // 计算新的滚动位置
+  const newScrollTop = startScrollTop + deltaY * scrollRatio;
+  chatArea.scrollTop = Math.max(0, Math.min(newScrollTop, chatArea.scrollHeight - chatArea.clientHeight));
+}
+
+function onDragTouch(e) {
+  if (!isDraggingScrollbar || e.touches.length === 0) return;
+  e.preventDefault();
+  
+  const deltaY = e.touches[0].clientY - startY;
+  const chatArea = document.getElementById('chatArea');
+  const scrollRatio = chatArea.scrollHeight / chatArea.clientHeight;
+  
+  // 计算新的滚动位置
+  const newScrollTop = startScrollTop + deltaY * scrollRatio;
+  chatArea.scrollTop = Math.max(0, Math.min(newScrollTop, chatArea.scrollHeight - chatArea.clientHeight));
+}
+
+function stopDrag() {
+  isDraggingScrollbar = false;
+  scrollbarHandle.classList.remove('dragging');
+  
+  document.removeEventListener('mousemove', onDrag);
+  document.removeEventListener('mouseup', stopDrag);
+  document.removeEventListener('touchmove', onDragTouch);
+  document.removeEventListener('touchend', stopDrag);
+  document.removeEventListener('touchcancel', stopDrag);
+}
+
+// 在页面加载完成后初始化侧边条
+setTimeout(initScrollbarHandle, 500);
+
+// 自动更新侧边条位置
+function updateScrollbarPosition() {
+  if (!scrollbarHandle || isDraggingScrollbar || scrollbarHandle.classList.contains('hidden')) return;
+  
+  const chatArea = document.getElementById('chatArea');
+  if (!chatArea || chatArea.scrollHeight <= chatArea.clientHeight) return;
+  
+  const progress = chatArea.scrollTop / (chatArea.scrollHeight - chatArea.clientHeight);
+  const visibleHeight = 100; // 侧边条高度(100px)
+  const containerHeight = chatArea.clientHeight;
+  const maxOffset = containerHeight - visibleHeight;
+  const offset = progress * maxOffset;
+  
+  // 计算相对位置百分比（保持在聊天区域内可见）
+  const topOffset = 20 + (progress * 60);
+  scrollbarHandle.style.top = `${topOffset}%`;
+}
+
+// 添加聊天区滚动监听，当滚动到一定位置时自动调整侧边条位置
+document.addEventListener('DOMContentLoaded', function() {
+  const chatArea = document.getElementById('chatArea');
+  if (chatArea) {
+    chatArea.addEventListener('scroll', updateScrollbarPosition);
+  }
+  
+  // 定时检查是否需要更新侧边条显示状态
+  setInterval(() => {
+    if (scrollbarHandle) {
+      const chatArea = document.getElementById('chatArea');
+      if (chatArea && chatArea.scrollHeight > chatArea.clientHeight) {
+        if (scrollbarHandle.classList.contains('hidden')) {
+          scrollbarHandle.classList.remove('hidden');
+          updateScrollbarPosition();
+        }
+      } else {
+        if (!scrollbarHandle.classList.contains('hidden')) {
+          scrollbarHandle.classList.add('hidden');
+        }
+      }
+    }
+  }, 1000);
+});
 </script>
+
+  <!-- 可拖拽侧边条 -->
+  <div class="scrollbar-handle hidden" id="scrollbarHandle"></div>
+
 </body>
 </html>
